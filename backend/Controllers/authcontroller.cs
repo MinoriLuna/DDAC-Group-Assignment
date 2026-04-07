@@ -1,32 +1,90 @@
 using Microsoft.AspNetCore.Mvc;
+using backend.Data;
+using backend.Models;
+using System.Text.Json.Serialization;
 
 namespace backend.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // This means the URL will be /api/auth
+[Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    // This listens for a POST request at /api/auth/register
+    private readonly ApplicationDbContext _context;
+
+    public AuthController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    // --- TASK 1: REGISTER ---
     [HttpPost("register")]
     public IActionResult Register([FromBody] RegisterRequest request)
     {
-        // For now, we are just printing it to the VS Code terminal to prove it works!
-        Console.WriteLine("\n=== NEW USER REGISTERING ===");
-        Console.WriteLine($"Name: {request.FullName}");
-        Console.WriteLine($"Email: {request.Email}");
-        Console.WriteLine($"Role: {request.Role}");
-        Console.WriteLine("============================\n");
+        Console.WriteLine($"\n---> REGISTER ATTEMPT: {request.FullName} ({request.Email})");
+        try 
+        {
+            if (_context.Users.Any(u => u.Email == request.Email))
+                return BadRequest(new { message = "Email is already registered!" });
 
-        // Send a success message back to the Next.js frontend
-        return Ok(new { message = "ASP.NET says: I received your registration data!" });
+            var newUser = new User {
+                UserId = Guid.NewGuid(),
+                FullName = request.FullName,
+                Email = request.Email,
+                Role = request.Role,
+                PasswordHash = request.Password, 
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(newUser);
+            _context.SaveChanges();
+            Console.WriteLine("---> SUCCESS: User saved to database.\n");
+            return Ok(new { message = "Registration successful!" });
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"---> DATABASE ERROR: {ex.Message}");
+            return StatusCode(500, new { message = "Database error." });
+        }
     }
-}
 
-// This is the "blueprint" of the JSON data Next.js is sending us
+    // --- TASK 2: LOGIN (Now safely inside the class!) ---
+    [HttpPost("login")]
+    public IActionResult Login([FromBody] LoginRequest request)
+    {
+        Console.WriteLine($"---> LOGIN ATTEMPT: {request.Email}");
+
+        var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
+
+        if (user == null || user.PasswordHash != request.Password)
+        {
+            Console.WriteLine("---> LOGIN FAILED: Invalid credentials.");
+            return Unauthorized(new { message = "Invalid email or password!" });
+        }
+
+        Console.WriteLine($"---> LOGIN SUCCESS: Welcome back, {user.FullName}");
+
+        return Ok(new { 
+            message = "Login successful!",
+            user = new {
+                userId = user.UserId,
+                fullName = user.FullName,
+                email = user.Email,
+                role = user.Role
+            }
+        });
+    }
+} 
+
+// --- BLUEPRINTS (Keep these outside the controller house) ---
 public class RegisterRequest
 {
-    public string FullName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
+    [JsonPropertyName("fullName")] public string FullName { get; set; } = string.Empty;
+    [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
+    [JsonPropertyName("password")] public string Password { get; set; } = string.Empty;
+    [JsonPropertyName("role")] public string Role { get; set; } = string.Empty;
+}
+
+public class LoginRequest
+{
+    [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
+    [JsonPropertyName("password")] public string Password { get; set; } = string.Empty;
 }
