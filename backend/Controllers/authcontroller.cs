@@ -68,7 +68,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid email or password!" });
         }
 
-        // --- GENERATE JWT TOKEN (The Passport) ---
+        // Generating JWT 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
         

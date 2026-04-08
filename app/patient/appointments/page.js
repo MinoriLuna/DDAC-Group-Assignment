@@ -2,7 +2,7 @@
 
 export default function AppointmentsPage() {
   return (
-    <div className="min-h-screen bg-gray-100 p-10 font-sans">
+    <div className="min-h-screen p-10 font-sans">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl font-bold text-gray-800 mb-8">My Appointments</h2>
 

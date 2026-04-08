@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Auth Registry (The Digital Passport logic)
+// Auth Registry
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,10 +40,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-
-// Traffic Cop Registry (Crucial: This was in the wrong spot before!)
 builder.Services.AddControllers();
-
 
 // Build
 var app = builder.Build();

@@ -2,7 +2,7 @@
 
 export default function MedicalHistoryPage() {
   return (
-    <div className="min-h-screen bg-gray-100 p-10 font-sans">
+    <div className="min-h-screen p-10 font-sans">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Medical History</h2>
         <p className="text-gray-500 mb-8">Your past consultation notes and prescriptions.</p>
