@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using backend.Models; // This imports the User blueprint we just made
+using backend.Models;
 
 namespace backend.Data;
 
@@ -10,7 +10,19 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    // This specifically tells C#: "We have a table in Supabase called 'Users' 
-    // and it uses the 'User' blueprint."
+    // These tell C# which tables exist in your database
     public DbSet<User> Users { get; set; }
+    public DbSet<Appointment> Appointments { get; set; }
+
+    //Status making numbers into text
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // This magic line ensures that our C# Enum (Pending, Confirmed, etc.) 
+        // is saved into the Supabase 'status' column as a STRING (text).
+        modelBuilder.Entity<Appointment>()
+            .Property(a => a.Status)
+            .HasConversion<string>();
+    }
 }
