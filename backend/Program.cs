@@ -1,17 +1,19 @@
 using Microsoft.EntityFrameworkCore;
-using backend.Data; // This tells C# where to find your Database Map
+using backend.Data;
+using backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. DATABASE REGISTRY: Tell C# exactly how to connect to Supabase
+// Database Registry
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// 2. CORS REGISTRY: Read the list of allowed URLs from the vault
+// CORS Registry
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
-
-// 3. THE BOUNCER: Setup the rules
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
@@ -22,15 +24,44 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 4. Enable Controllers (The Traffic Cops)
-builder.Services.AddControllers();
+// Auth Registry
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
+builder.Services.AddAuthorization();
+builder.Services.AddControllers()
+.AddJsonOptions(options => 
+    {
+        // This tells C# to ALWAYS send Enums as "Pending" instead of 0
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
+// In the future replace with real implementations
+builder.Services.AddScoped<IStorageService, MockStorageService>();
+builder.Services.AddScoped<INotificationService, MockNotificationService>();
+builder.Services.AddScoped<IMessageQueue, MockQueueService>();
+
+// Build
 var app = builder.Build();
 
-// 5. Turn the Bouncer on
 app.UseCors("AllowNextJs");
 
-// 6. Turn the Traffic Cops on
+app.UseAuthentication(); // "Who are you?"
+app.UseAuthorization();  // "Do you have permission to be here?"
+
+// 3. The Routes
 app.MapControllers();
 
 app.Run();

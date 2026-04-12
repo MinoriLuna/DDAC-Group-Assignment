@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using backend.Data;
 using backend.Models;
 using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace backend.Controllers;
 
@@ -10,10 +14,12 @@ namespace backend.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _config; // This lets us read appsettings.json
 
-    public AuthController(ApplicationDbContext context)
+    public AuthController(ApplicationDbContext context, IConfiguration config)
     {
         _context = context;
+        _config = config;
     }
 
     // --- TASK 1: REGISTER ---
@@ -31,13 +37,14 @@ public class AuthController : ControllerBase
                 FullName = request.FullName,
                 Email = request.Email,
                 Role = request.Role,
-                PasswordHash = request.Password, 
+                // SCRAMBLE THE PASSWORD
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password), 
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(newUser);
             _context.SaveChanges();
-            Console.WriteLine("---> SUCCESS: User saved to database.\n");
+            Console.WriteLine("---> SUCCESS: User saved with hashed password.\n");
             return Ok(new { message = "Registration successful!" });
         }
         catch (Exception ex) {
@@ -46,7 +53,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    // --- TASK 2: LOGIN (Now safely inside the class!) ---
+    // --- TASK 2: LOGIN WITH JWT ---
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
@@ -54,27 +61,47 @@ public class AuthController : ControllerBase
 
         var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
 
-        if (user == null || user.PasswordHash != request.Password)
+        // Verify the scrambled password
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
             Console.WriteLine("---> LOGIN FAILED: Invalid credentials.");
             return Unauthorized(new { message = "Invalid email or password!" });
         }
 
-        Console.WriteLine($"---> LOGIN SUCCESS: Welcome back, {user.FullName}");
+        // Generating JWT 
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
+        
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[] {
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("userId", user.UserId.ToString())
+            }),
+            Expires = DateTime.UtcNow.AddDays(7), 
+            Issuer = _config["Jwt:Issuer"],
+            Audience = _config["Jwt:Audience"],
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        var tokenString = tokenHandler.WriteToken(token);
+
+        Console.WriteLine($"---> LOGIN SUCCESS: JWT Issued for {user.FullName}");
 
         return Ok(new { 
             message = "Login successful!",
+            token = tokenString, // Next.js will store this
             user = new {
-                userId = user.UserId,
                 fullName = user.FullName,
-                email = user.Email,
                 role = user.Role
             }
         });
     }
 } 
 
-// --- BLUEPRINTS (Keep these outside the controller house) ---
 public class RegisterRequest
 {
     [JsonPropertyName("fullName")] public string FullName { get; set; } = string.Empty;

@@ -1,130 +1,131 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ProfilePage() {
-  // State for updating contact details
-  const [contactData, setContactData] = useState({
-    phone: '+60 12-345-6789',
-    address: '123 Jalan Ampang, Kuala Lumpur'
-  });
+  const [profile, setProfile] = useState({ fullName: '', email: '', role: '', phone: '', address: '', createdAt: '' });
+  const [editData, setEditData] = useState({ fullName: '', email: '', phone: '', address: '' });
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // State for password changes
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('http://localhost:5230/api/profile/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(data);
+          setEditData({ fullName: data.fullName, email: data.email, phone: data.phone || '', address: data.address || '' });
+        }
+      } catch (err) { console.error(err); } finally { setLoading(false); }
+    };
+    fetchProfile();
+  }, []);
 
-  const handleContactSubmit = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    console.log("Saving new contact info:", contactData);
-    alert("Profile details updated successfully!");
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('http://localhost:5230/api/profile/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(editData)
+      });
+      if (res.ok) {
+        setProfile({ ...profile, ...editData });
+        setIsEditing(false);
+        alert("Saved!");
+      }
+    } catch (err) { console.error(err); }
   };
 
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
+  const handlePhoneFormat = (val) => {
+  // 1. Delete everything that is NOT a number
+  let num = val.replace(/\D/g, '');
+  
+  // 2. Limit to 11 digits max
+  num = num.substring(0, 11);
+
+  // 3. Auto-format as they type
+  if (num.length > 7) {
+    if (num.startsWith('011')) {
+      return `${num.slice(0,3)}-${num.slice(3,7)} ${num.slice(7)}`; // 011 format
     }
-    console.log("Sending password change request...", passwordData);
-    alert("Password changed successfully!");
-  };
+    return `${num.slice(0,3)}-${num.slice(3,6)} ${num.slice(6)}`; // Standard format
+  } else if (num.length > 3) {
+    return `${num.slice(0,3)}-${num.slice(3)}`;
+  }
+  return num;
+};
+
+  if (loading) return <p className="p-10 font-bold text-gray-400">Loading...</p>;
 
   return (
-    <div className="p-10 font-sans">
-      <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Profile Settings</h2>
-        <p className="text-gray-500 mb-8">Manage your personal information and security.</p>
-
-        <div className="space-y-6">
-          
-          {/* Read-Only Account Info Card */}
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center gap-6">
-            <div className="h-20 w-20 bg-red-100 text-red-600 flex items-center justify-center rounded-full text-3xl font-bold">
-              A
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800">Ashton</h3>
-              <p className="text-gray-500">Patient ID: PAT-84729</p>
-              <span className="inline-block mt-2 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">
-                ashton.patient@example.com
-              </span>
-            </div>
-          </div>
-
-          {/* Update Details Form */}
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Contact Details</h3>
-            <form onSubmit={handleContactSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input 
-                  type="text" 
-                  value={contactData.phone}
-                  onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 focus:ring-red-500 focus:border-red-500 outline-none" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Home Address</label>
-                <input 
-                  type="text" 
-                  value={contactData.address}
-                  onChange={(e) => setContactData({ ...contactData, address: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 focus:ring-red-500 focus:border-red-500 outline-none" 
-                />
-              </div>
-              <button type="submit" className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors text-sm">
-                Save Changes
-              </button>
-            </form>
-          </div>
-
-          {/* Change Password Form */}
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 border-t-4 border-t-red-600">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Security</h3>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                <input 
-                  type="password" 
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 focus:ring-red-500 focus:border-red-500 outline-none" 
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                  <input 
-                    type="password" 
-                    value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 focus:ring-red-500 focus:border-red-500 outline-none" 
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                  <input 
-                    type="password" 
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 focus:ring-red-500 focus:border-red-500 outline-none" 
-                    required
-                  />
-                </div>
-              </div>
-              <button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors text-sm">
-                Update Password
-              </button>
-            </form>
-          </div>
-
-        </div>
+    <div className="max-w-2xl bg-white p-10 rounded-3xl shadow-xl border border-gray-100 mx-auto mt-10">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-black text-black">Profile</h1>
+        <button 
+          onClick={() => setIsEditing(!isEditing)} 
+          className={`px-5 py-2.5 rounded-2xl font-bold transition-all ${
+            isEditing 
+            ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' 
+            : 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white shadow-sm'
+          }`}
+        >
+          {isEditing ? 'Cancel' : 'Edit Profile'}
+        </button>
       </div>
+
+      {isEditing ? (
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <InputField label="Full Name" value={editData.fullName} onChange={(val) => setEditData({...editData, fullName: val})} />
+          <InputField label="Email" value={editData.email} type="email" onChange={(val) => setEditData({...editData, email: val})} />
+          <InputField label="Phone" value={editData.phone} type="phone" onChange={(val) => setEditData({...editData, phone: handlePhoneFormat(val)})} />
+          
+          <div>
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Home Address</label>
+            <textarea 
+              value={editData.address} 
+              onChange={(e) => setEditData({...editData, address: e.target.value})}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-semibold mt-1 h-24 outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+
+          <button type="submit" className="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all">
+            Save Changes
+          </button>
+        </form>
+      ) : (
+        <div className="space-y-4">
+          <InfoItem label="Full Name" value={profile.fullName} />
+          <InfoItem label="Email" value={profile.email} />
+          <InfoItem label="Phone Number" value={profile.phone || 'No phone set'} />
+          <InfoItem label="Address" value={profile.address || 'No address set'} />
+          <InfoItem label="Account Created" value={new Date(profile.createdAt).toLocaleString()} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Small helpers to keep the file clean
+function InputField({ label, value, onChange, type = "text" }) {
+  return (
+    <div>
+      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">{label}</label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} 
+        className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-black font-semibold mt-1 outline-none" />
+    </div>
+  );
+}
+
+function InfoItem({ label, value }) {
+  return (
+    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className="font-bold text-gray-900">{value}</p>
     </div>
   );
 }

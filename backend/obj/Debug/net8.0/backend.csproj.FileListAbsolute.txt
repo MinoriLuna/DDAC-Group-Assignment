@@ -110,3 +110,12 @@ C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backe
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\BCrypt.Net-Next.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
