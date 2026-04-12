@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using backend.Data;
 using backend.Models;
+using backend.Services;
 
 namespace backend.Controllers;
 
@@ -11,11 +12,14 @@ public class AppointmentController : ControllerBase
 {
     private readonly ApplicationDbContext _context; 
     private readonly IConfiguration _config; 
-
-    public AppointmentController(ApplicationDbContext context, IConfiguration config)
+    private readonly IMessageQueue _queue;
+    
+    public AppointmentController(ApplicationDbContext context, IConfiguration config, IMessageQueue queue)
     {
         _context = context;
         _config = config;
+        _queue = queue;
+
     }
 
     // GET: api/appointment/doctors
@@ -37,13 +41,11 @@ public class AppointmentController : ControllerBase
     // POST: api/appointment/book
     [Authorize] 
     [HttpPost("book")]
-    public IActionResult BookAppointment([FromBody] BookAppointmentRequest request)
+    public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request) // Added async Task
     {
         try 
         {
-            // 1. Find out who is asking using their JWT passport
             var userIdString = User.FindFirst("userId")?.Value;
-            
             if (string.IsNullOrEmpty(userIdString))
             {
                 return Unauthorized(new { message = "You must be logged in to book an appointment." });
@@ -51,27 +53,38 @@ public class AppointmentController : ControllerBase
 
             var patientId = Guid.Parse(userIdString);
 
-            // 2. Build the new appointment using the data Next.js sent us
             var newAppointment = new Appointment
             {
                 PatientId = patientId,
                 DoctorId = request.DoctorId,
                 AppointmentDate = request.AppointmentDate,
                 AppointmentTime = request.AppointmentTime,
-                Reason = request.Reason
+                Reason = request.Reason,
+                Status = AppointmentStatus.Pending // Uses your new Enum!
             };
 
-            // 3. Save to database
+            // 1. Save to Database
             _context.Appointments.Add(newAppointment);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync(); // Use Async version
 
-            // 4. Tell Next.js it worked!
-            return Ok(new { message = "Appointment booked successfully!", appointmentId = newAppointment.AppointmentId });
+            // 2. CLOUD LOGIC: Add notification task to SQS Queue
+            // This represents "Asynchronous Processing" in your DDAC report
+            var notificationPayload = new {
+                PatientId = patientId,
+                Message = $"Appointment confirmed for {request.AppointmentDate} at {request.AppointmentTime}",
+                TargetPhone = "012-3456789" // In real life, you'd pull this from User data
+            };
+
+            await _queue.AddToQueueAsync("appointment-notifications", notificationPayload);
+
+            return Ok(new { 
+                message = "Appointment booked and notification queued!", 
+                appointmentId = newAppointment.AppointmentId 
+            });
         }
         catch (System.Exception ex)
         {
-            // If the database crashes (e.g. missing foreign key), send the exact error back to the frontend
-            return StatusCode(500, new { message = "Database Error", details = ex.InnerException?.Message ?? ex.Message });
+            return StatusCode(500, new { message = "Server Error", details = ex.Message });
         }
     }
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
+using backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -46,6 +47,11 @@ builder.Services.AddControllers()
         // This tells C# to ALWAYS send Enums as "Pending" instead of 0
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+// In the future replace with real implementations
+builder.Services.AddScoped<IStorageService, MockStorageService>();
+builder.Services.AddScoped<INotificationService, MockNotificationService>();
+builder.Services.AddScoped<IMessageQueue, MockQueueService>();
 
 // Build
 var app = builder.Build();
