@@ -1,4 +1,5 @@
-namespace backend.Services;
+using backend.Services.Interfaces;
+namespace backend.Services.Mocks;
 
 public class MockStorageService : IStorageService
 {
