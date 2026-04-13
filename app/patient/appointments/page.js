@@ -29,17 +29,37 @@ export default function AppointmentsPage() {
     fetchAppointments();
   }, []);
 
-  // --- 2. CANCEL APPOINTMENT LOGIC ---
-  const handleCancel = async (id) => {
-    if (!confirm("Are you sure you want to cancel this appointment?")) return;
-    
-    // For now, we will just update the UI locally since the cancel endpoint isn't built yet
-    // Later, you will add a fetch() here to PUT to the backend to change the status
-    setAppointments(appointments.map(appt => 
-      appt.appointmentId === id ? { ...appt, status: 'Cancelled' } : appt
-    ));
-    alert("Appointment cancelled.");
-  };
+// Cancel Appointment
+const handleCancel = async (id) => {
+  if (!confirm("Are you sure you want to cancel this appointment?")) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5230/api/appointment/${id}/cancel`, {
+      method: 'PATCH', // Matches our backend attribute
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (res.ok) {
+      // Update UI only if the database update worked
+      setAppointments(appointments.map(appt => 
+        appt.appointmentId === id 
+          ? { ...appt, status: APPOINTMENT_STATUS.CANCELLED } 
+          : appt
+      ));
+      alert("Appointment cancelled successfully.");
+    } else {
+      const errorData = await res.json();
+      alert(`Error: ${errorData.message}`);
+    }
+  } catch (error) {
+    console.error("Cancel failed:", error);
+    alert("Could not connect to the server.");
+  }
+};
 
   if (loading) return <div className="p-10 font-black text-gray-400 animate-pulse text-center">Loading Appointments...</div>;
 

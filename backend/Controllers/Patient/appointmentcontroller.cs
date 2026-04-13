@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
 using backend.Services.Interfaces;
-using backend.Services.Mocks; // For Mock Services
 
 namespace backend.Controllers;
 
@@ -125,6 +125,44 @@ public class AppointmentController : ControllerBase
             return StatusCode(500, new { message = "Failed to fetch appointments", details = ex.Message });
         }
     }
+
+[Authorize]
+[HttpPatch("{id}/cancel")] // URL: api/appointment/{id}/cancel
+public async Task<IActionResult> CancelAppointment(Guid id)
+{
+    try
+    {
+        var userIdString = User.FindFirst("userId")?.Value;
+        var patientId = Guid.Parse(userIdString);
+
+        // 1. Find the appointment and make sure it belongs to THIS user
+        var appointment = await _context.Appointments
+            .FirstOrDefaultAsync(a => a.AppointmentId == id && a.PatientId == patientId);
+
+        if (appointment == null)
+        {
+            return NotFound(new { message = "Appointment not found or you don't have permission to cancel it." });
+        }
+
+        // 2. Change the status using your Enum
+        appointment.Status = AppointmentStatus.Cancelled;
+        
+        await _context.SaveChangesAsync();
+
+        // 3. (Optional) Tell SQS to notify the clinic that a patient cancelled
+        await _queue.AddToQueueAsync("appointment-notifications", new {
+            Action = "CANCELLED",
+            AppointmentId = id,
+            Message = $"Patient cancelled appointment for {appointment.AppointmentDate}"
+        });
+
+        return Ok(new { message = "Appointment cancelled successfully." });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "Error cancelling appointment", details = ex.Message });
+    }
+}
 }
 
 // --------------------------------------------------------
