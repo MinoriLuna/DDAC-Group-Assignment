@@ -13,6 +13,7 @@ public class ApplicationDbContext : DbContext
     // These tell C# which tables exist in your database
     public DbSet<User> Users { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
+    public DbSet<MedicalDocument> Documents { get; set; }
 
     //Status making numbers into text
     protected override void OnModelCreating(ModelBuilder modelBuilder)

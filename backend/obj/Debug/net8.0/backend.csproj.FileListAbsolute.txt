@@ -124,3 +124,4 @@ C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backe
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.S3.dll
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.SimpleNotificationService.dll
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.SQS.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\backend.staticwebassets.runtime.json

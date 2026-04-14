@@ -71,7 +71,7 @@ export default function PatientDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold text-gray-800">{nextAppt.reason}</p>
-                  <p className="text-gray-600 mt-1">with <span className="font-semibold text-gray-800">Doctor {nextAppt.doctorName}</span></p>
+                  <p className="text-gray-600 mt-1">with <span className="font-semibold text-gray-800">{nextAppt.doctorName}</span></p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-red-600 tracking-tight">{nextAppt.appointmentDate}</p>

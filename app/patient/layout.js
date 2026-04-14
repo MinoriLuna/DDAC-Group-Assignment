@@ -44,6 +44,7 @@ export default function PatientLayout({ children }) {
           <SidebarLink href="/patient/booking" label="Book Appointment" />
           <SidebarLink href="/patient/appointments" label="My Appointments" />
           <SidebarLink href="/patient/history" label="Medical History" />
+          <SidebarLink href="/patient/documents" label="Medical Vault" />
         </nav>
 
         {/* --- BOTTOM ACTIONS --- */}
