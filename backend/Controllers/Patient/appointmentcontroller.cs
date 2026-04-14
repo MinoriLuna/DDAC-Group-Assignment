@@ -129,7 +129,7 @@ public class AppointmentController : ControllerBase
         }
     }
 
-[Authorize]
+    [Authorize]
     [HttpPatch("{id}/cancel")] 
     public async Task<IActionResult> CancelAppointment(Guid id)
     {

@@ -119,3 +119,8 @@ C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backe
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.Core.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.Extensions.NETCore.Setup.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.S3.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.SimpleNotificationService.dll
+C:\Users\apple\Documents\Homeworks\Degree\Sem 3\DDAC\DDAC-Group-Assignment\backend\bin\Debug\net8.0\AWSSDK.SQS.dll

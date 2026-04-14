@@ -64,7 +64,6 @@ const handleCancel = async (id) => {
   if (loading) return <div className="p-10 font-black text-gray-400 animate-pulse text-center">Loading Appointments...</div>;
 
   // --- 3. FILTER INTO UPCOMING VS PAST ---
-  // We use the Constants here so we never have to worry about typos again!
   const upcoming = appointments.filter(a => 
     a.status === APPOINTMENT_STATUS.PENDING || 
     a.status === APPOINTMENT_STATUS.CONFIRMED
@@ -107,7 +106,7 @@ const handleCancel = async (id) => {
         ) : (
           <div className="space-y-4 mb-10">
             {upcoming.map(appt => (
-              <div key={appt.appointmentId} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-red-500 flex justify-between items-center transition-all hover:shadow-md">
+              <div key={appt.appointmentId} className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-600 border-l-4 border-l-red-500 flex justify-between items-center transition-all hover:shadow-md">
                 <div>
                   <p className="text-xl font-bold text-gray-900">{appt.reason || 'General Visit'}</p>
                   <p className="text-gray-500 font-medium text-sm mt-0.5">
