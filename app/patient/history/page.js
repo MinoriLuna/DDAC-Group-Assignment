@@ -44,7 +44,7 @@ export default function MedicalHistoryPage() {
             <p className="text-gray-400 italic">No past medical records found.</p>
           ) : (
             history.map((record) => (
-              <div key={record.appointmentId} className="bg-white p-6 rounded-xl shadow-sm">
+              <div key={record.appointmentId} className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-600">
                 <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-800">{record.reason || 'General Consultation'}</h3>

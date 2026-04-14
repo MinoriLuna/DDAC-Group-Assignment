@@ -54,6 +54,11 @@ builder.Services.AddScoped<IStorageService, MockStorageService>();
 builder.Services.AddScoped<INotificationService, MockNotificationService>();
 builder.Services.AddScoped<IMessageQueue, MockQueueService>();
 
+//AWS Services (Uncomment when ready to test with real AWS services)
+//builder.Services.AddScoped<IStorageService, S3StorageService>();
+//builder.Services.AddScoped<IMessageQueue, SqsQueueService>();
+//builder.Services.AddScoped<INotificationService, SnsNotificationService>();
+
 // Build
 var app = builder.Build();
 

@@ -63,7 +63,7 @@ export default function ProfilePage() {
   if (loading) return <p className="p-10 font-bold text-gray-400">Loading...</p>;
 
   return (
-    <div className="max-w-2xl bg-white p-10 rounded-3xl shadow-xl border border-gray-100 mx-auto mt-10">
+    <div className="max-w-2xl bg-white p-10 rounded-2xl shadow-xl border border-gray-100 mx-auto mt-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-black text-black">Profile</h1>
         <button 
