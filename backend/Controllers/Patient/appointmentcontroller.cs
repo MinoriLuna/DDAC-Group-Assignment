@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
 using backend.Services.Interfaces;
+using Npgsql;
 
 namespace backend.Controllers;
 
@@ -14,12 +15,14 @@ public class AppointmentController : ControllerBase
     private readonly ApplicationDbContext _context; 
     private readonly IConfiguration _config; 
     private readonly IMessageQueue _queue;
+    private readonly INotificationService _notification;
     
-    public AppointmentController(ApplicationDbContext context, IConfiguration config, IMessageQueue queue)
+    public AppointmentController(ApplicationDbContext context, IConfiguration config, IMessageQueue queue, INotificationService notification)
     {
         _context = context;
         _config = config;
         _queue = queue;
+        _notification = notification;
 
     }
 
@@ -42,15 +45,13 @@ public class AppointmentController : ControllerBase
     // POST: api/appointment/book
     [Authorize] 
     [HttpPost("book")]
-    public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request) // Added async Task
+    public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request)
     {
         try 
         {
             var userIdString = User.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userIdString))
-            {
-                return Unauthorized(new { message = "You must be logged in to book an appointment." });
-            }
+                return Unauthorized(new { message = "You must be logged in." });
 
             var patientId = Guid.Parse(userIdString);
 
@@ -61,25 +62,27 @@ public class AppointmentController : ControllerBase
                 AppointmentDate = request.AppointmentDate,
                 AppointmentTime = request.AppointmentTime,
                 Reason = request.Reason,
-                Status = AppointmentStatus.Pending // Uses your new Enum!
+                Status = AppointmentStatus.Pending 
             };
 
-            // 1. Save to Database
             _context.Appointments.Add(newAppointment);
-            await _context.SaveChangesAsync(); // Use Async version
+            await _context.SaveChangesAsync(); 
 
-            // 2. CLOUD LOGIC: Add notification task to SQS Queue
-            // This represents "Asynchronous Processing" in your DDAC report
+            // --- CLOUD LOGIC A: SQS (The Queue) ---
             var notificationPayload = new {
                 PatientId = patientId,
-                Message = $"Appointment confirmed for {request.AppointmentDate} at {request.AppointmentTime}",
-                TargetPhone = "012-3456789" // In real life, you'd pull this from User data
+                Message = $"Appointment confirmed for {request.AppointmentDate}",
+                TargetPhone = "012-3456789" 
             };
-
             await _queue.AddToQueueAsync("appointment-notifications", notificationPayload);
 
+            // --- CLOUD LOGIC B: SNS (The Real-time SMS) ---
+            // In a real app, you'd fetch the user's real phone from the DB first
+            string msg = $"Booking Confirmed! See you on {request.AppointmentDate} at {request.AppointmentTime}.";
+            await _notification.SendSmsAsync("+60123456789", msg); //Fake one rn
+
             return Ok(new { 
-                message = "Appointment booked and notification queued!", 
+                message = "Appointment booked and SMS notification sent!", 
                 appointmentId = newAppointment.AppointmentId 
             });
         }
@@ -127,42 +130,41 @@ public class AppointmentController : ControllerBase
     }
 
 [Authorize]
-[HttpPatch("{id}/cancel")] // URL: api/appointment/{id}/cancel
-public async Task<IActionResult> CancelAppointment(Guid id)
-{
-    try
+    [HttpPatch("{id}/cancel")] 
+    public async Task<IActionResult> CancelAppointment(Guid id)
     {
-        var userIdString = User.FindFirst("userId")?.Value;
-        var patientId = Guid.Parse(userIdString);
-
-        // 1. Find the appointment and make sure it belongs to THIS user
-        var appointment = await _context.Appointments
-            .FirstOrDefaultAsync(a => a.AppointmentId == id && a.PatientId == patientId);
-
-        if (appointment == null)
+        try
         {
-            return NotFound(new { message = "Appointment not found or you don't have permission to cancel it." });
+            var userIdString = User.FindFirst("userId")?.Value;
+            var patientId = Guid.Parse(userIdString);
+
+            var appointment = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.AppointmentId == id && a.PatientId == patientId);
+
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found." });
+
+            appointment.Status = AppointmentStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            // Cloud Feature A
+            // Notify via Queue
+            await _queue.AddToQueueAsync("appointment-notifications", new {
+                Action = "CANCELLED",
+                AppointmentId = id
+            });
+
+            // Cloud Feature B
+            // Notify via SMS (Mock/SNS)
+            await _notification.SendSmsAsync("+60123456789", $"Your appointment on {appointment.AppointmentDate} has been cancelled.");
+
+            return Ok(new { message = "Appointment cancelled successfully." });
         }
-
-        // 2. Change the status using your Enum
-        appointment.Status = AppointmentStatus.Cancelled;
-        
-        await _context.SaveChangesAsync();
-
-        // 3. (Optional) Tell SQS to notify the clinic that a patient cancelled
-        await _queue.AddToQueueAsync("appointment-notifications", new {
-            Action = "CANCELLED",
-            AppointmentId = id,
-            Message = $"Patient cancelled appointment for {appointment.AppointmentDate}"
-        });
-
-        return Ok(new { message = "Appointment cancelled successfully." });
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error", details = ex.Message });
+        }
     }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { message = "Error cancelling appointment", details = ex.Message });
-    }
-}
 }
 
 // --------------------------------------------------------
