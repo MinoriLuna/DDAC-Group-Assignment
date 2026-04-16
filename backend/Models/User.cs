@@ -23,4 +23,11 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     [Column("createdat")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [Column("specialization")]
+    public string? Specialization { get; set; }
+    [Column("department")]
+    public string? Department { get; set; }
+    [Column("isavailable")]
+    public bool IsAvailable { get; set; } = true;
 }

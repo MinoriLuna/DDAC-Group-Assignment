@@ -52,4 +52,11 @@ public class Appointment
 
     [ForeignKey("DoctorId")]
     public User? Doctor { get; set; }
+
+    // Medical Note
+    [Column("notetype")]
+    public string? NoteType { get; set; } // General, Diagnosis, Referral, FollowUp, LabResult
+
+    [Column("notecontent")]
+    public string? NoteContent { get; set; }
 }

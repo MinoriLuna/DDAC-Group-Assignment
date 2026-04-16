@@ -15,6 +15,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Appointment> Appointments { get; set; }
     public DbSet<MedicalDocument> Documents { get; set; }
 
+    public DbSet<Prescription> Prescriptions { get; set; }  
+
     //Status making numbers into text
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
