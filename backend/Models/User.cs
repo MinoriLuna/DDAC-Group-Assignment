@@ -25,9 +25,14 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [Column("specialization")]
-    public string? Specialization { get; set; }
+    public string? Specialization { get; set; }    
+
+    [Column("licensenumber")]
+    public string? LicenseNumber { get; set; }     
+
     [Column("department")]
-    public string? Department { get; set; }
+    public string? Department { get; set; }       
+
     [Column("isavailable")]
-    public bool IsAvailable { get; set; } = true;
+    public bool IsAvailable { get; set; } = true;  
 }
