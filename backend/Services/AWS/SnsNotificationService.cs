@@ -1,34 +1,38 @@
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
-using backend.Services.Interfaces;
+using Amazon.Runtime;
+using backend.Services.Interfaces; // Ensure this matches your interface folder
 
 namespace backend.Services.AWS;
 
 public class SnsNotificationService : INotificationService
 {
-    private readonly IAmazonSimpleNotificationService _snsClient;
+    private readonly IConfiguration _config;
 
-    public SnsNotificationService(IAmazonSimpleNotificationService snsClient)
+    public SnsNotificationService(IConfiguration config)
     {
-        _snsClient = snsClient;
+        _config = config;
     }
 
-    public async Task SendSmsAsync(string phoneNumber, string message)
+    public async Task SendNotificationAsync(string subject, string message)
     {
+        // Pulling your 4-hour Learner Lab keys
+        var credentials = new SessionAWSCredentials(
+            _config["AWS:AccessKey"],
+            _config["AWS:SecretKey"],
+            _config["AWS:SessionToken"]
+        );
+
+        using var client = new AmazonSimpleNotificationServiceClient(credentials, Amazon.RegionEndpoint.USEast1);
+        
         var request = new PublishRequest
         {
-            Message = message,
-            PhoneNumber = phoneNumber // Format: +60123456789
+            // Pulling the ARN we created in the console
+            TopicArn = _config["AWS:SnsTopicArn"],
+            Subject = subject,
+            Message = message
         };
 
-        try
-        {
-            await _snsClient.PublishAsync(request);
-            Console.WriteLine($"[SNS REAL] Message sent to {phoneNumber}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[SNS ERROR] Failed to send: {ex.Message}");
-        }
+        await client.PublishAsync(request);
     }
 }
