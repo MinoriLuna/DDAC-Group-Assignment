@@ -1,45 +1,44 @@
 using Amazon.S3;
 using Amazon.S3.Transfer;
 using backend.Services.Interfaces;
-using Microsoft.AspNetCore.Http; 
+using Amazon.Runtime;
 
-namespace backend.Services.AWS
+namespace backend.Services.AWS; // Double check this namespace matches your folder structure
+
+public class S3StorageService : IStorageService
 {
-    public class S3StorageService : IStorageService
+    private readonly IConfiguration _config;
+
+    public S3StorageService(IConfiguration config)
     {
-        private readonly IAmazonS3 _s3Client;
+        _config = config;
+    }
 
-        // Cleaned up the constructor since the Controller provides the bucket name
-        public S3StorageService(IAmazonS3 s3Client)
+    private IAmazonS3 GetS3Client()
+    {
+        // This pulls your keys from appsettings 
+        var credentials = new SessionAWSCredentials(
+            _config["AWS:AccessKey"],
+            _config["AWS:SecretKey"],
+            _config["AWS:SessionToken"]
+        );
+
+        return new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1);
+    }
+
+    public async Task<string> UploadFileAsync(IFormFile file, string bucketName, string prefix = "")
+    {
+        using var s3Client = GetS3Client();
+        var fileTransferUtility = new TransferUtility(s3Client);
+        
+        string fileName = $"{Guid.NewGuid()}_{file.FileName}";
+        string key = string.IsNullOrEmpty(prefix) ? fileName : $"{prefix}/{fileName}";
+
+        using (var stream = file.OpenReadStream())
         {
-            _s3Client = s3Client;
+            await fileTransferUtility.UploadAsync(stream, bucketName, key);
         }
 
-        public async Task<string> UploadFileAsync(IFormFile file, string bucketName, string prefix = "")
-        {
-            using var newStream = new MemoryStream();
-            await file.CopyToAsync(newStream);
-
-            // CRITICAL: Reset the stream position to 0, or S3 uploads an empty file!
-            newStream.Position = 0;
-
-            // Safely handle the prefix (folder). If no prefix is given, don't add a slash.
-            var keyPrefix = string.IsNullOrEmpty(prefix) ? "" : $"{prefix}/";
-            var fileKey = $"{keyPrefix}{Guid.NewGuid()}_{file.FileName}";
-
-            var uploadRequest = new TransferUtilityUploadRequest
-            {
-                InputStream = newStream,
-                Key = fileKey,
-                BucketName = bucketName, // Uses the name passed from the Controller
-                CannedACL = S3CannedACL.PublicRead // Makes the URL viewable by patients
-            };
-
-            var fileTransferUtility = new TransferUtility(_s3Client);
-            await fileTransferUtility.UploadAsync(uploadRequest);
-
-            // Return the actual internet URL of the file
-            return $"https://{bucketName}.s3.amazonaws.com/{fileKey}";
-        }
+        return $"https://{bucketName}.s3.amazonaws.com/{key}";
     }
 }

@@ -23,7 +23,6 @@ public class AppointmentController : ControllerBase
         _config = config;
         _queue = queue;
         _notification = notification;
-
     }
 
     // GET: api/appointment/doctors
@@ -61,7 +60,7 @@ public class AppointmentController : ControllerBase
                 DoctorId = request.DoctorId,
                 AppointmentDate = request.AppointmentDate,
                 AppointmentTime = request.AppointmentTime,
-                Reason = request.Reason,
+                Reason = request.Reason ?? "Regular Checkup", 
                 Status = AppointmentStatus.Pending 
             };
 
@@ -76,13 +75,14 @@ public class AppointmentController : ControllerBase
             };
             await _queue.AddToQueueAsync("appointment-notifications", notificationPayload);
 
-            // --- CLOUD LOGIC B: SNS (The Real-time SMS) ---
-            // In a real app, you'd fetch the user's real phone from the DB first
-            string msg = $"Booking Confirmed! See you on {request.AppointmentDate} at {request.AppointmentTime}.";
-            await _notification.SendSmsAsync("+60123456789", msg); //Fake one rn
+            // --- CLOUD LOGIC B: SNS (The Email Notification) ---
+            string subject = "Appointment Booking Confirmed";
+            string msg = $"Your booking for {request.AppointmentDate} at {request.AppointmentTime} has been received and is pending doctor approval.";
+            
+            await _notification.SendNotificationAsync(subject, msg);
 
             return Ok(new { 
-                message = "Appointment booked and SMS notification sent!", 
+                message = "Appointment booked and notification sent!", 
                 appointmentId = newAppointment.AppointmentId 
             });
         }
@@ -98,15 +98,12 @@ public class AppointmentController : ControllerBase
     {
         try 
         {
-            var userIdString = User.FindFirst("userId")?.Value;
-            if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
-
+            var userIdString = User.FindFirst("userId")?.Value ?? Guid.Empty.ToString();
             var patientId = Guid.Parse(userIdString);
 
-            // We use .Select() to neatly package the data and grab the Doctor's real name!
             var appointments = _context.Appointments
                 .Where(a => a.PatientId == patientId)
-                .OrderBy(a => a.AppointmentDate)         // Sort first!
+                .OrderBy(a => a.AppointmentDate)
                 .ThenBy(a => a.AppointmentTime)
                 .Select(a => new
                 {
@@ -135,7 +132,7 @@ public class AppointmentController : ControllerBase
     {
         try
         {
-            var userIdString = User.FindFirst("userId")?.Value;
+            var userIdString = User.FindFirst("userId")?.Value ?? Guid.Empty.ToString();
             var patientId = Guid.Parse(userIdString);
 
             var appointment = await _context.Appointments
@@ -147,16 +144,17 @@ public class AppointmentController : ControllerBase
             appointment.Status = AppointmentStatus.Cancelled;
             await _context.SaveChangesAsync();
 
-            // Cloud Feature A
-            // Notify via Queue
+            // Cloud Feature A: Notify via Queue
             await _queue.AddToQueueAsync("appointment-notifications", new {
                 Action = "CANCELLED",
                 AppointmentId = id
             });
 
-            // Cloud Feature B
-            // Notify via SMS (Mock/SNS)
-            await _notification.SendSmsAsync("+60123456789", $"Your appointment on {appointment.AppointmentDate} has been cancelled.");
+            // Cloud Feature B: Notify via Email (Fixed from SendSmsAsync)
+            await _notification.SendNotificationAsync(
+                "Appointment Cancelled", 
+                $"Your appointment on {appointment.AppointmentDate} has been successfully cancelled."
+            );
 
             return Ok(new { message = "Appointment cancelled successfully." });
         }
@@ -167,13 +165,10 @@ public class AppointmentController : ControllerBase
     }
 }
 
-// --------------------------------------------------------
-// The Blueprint (DTO) for incoming Next.js data.
-// --------------------------------------------------------
 public class BookAppointmentRequest
 {
     public Guid DoctorId { get; set; }
     public DateOnly AppointmentDate { get; set; }
     public TimeOnly AppointmentTime { get; set; }
-    public string Reason { get; set; }
+    public string Reason { get; set; } = string.Empty; // Fixed warning
 }
