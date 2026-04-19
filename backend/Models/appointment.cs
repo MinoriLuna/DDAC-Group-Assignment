@@ -45,8 +45,6 @@ public class Appointment
     [Column("prescription")]
     public string? Prescription { get; set; }
 
-    // Optional but highly recommended: 
-    // This tells EF Core about the relationship between Appointments and Users
     [ForeignKey("PatientId")]
     public User? Patient { get; set; }
 

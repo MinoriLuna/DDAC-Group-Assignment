@@ -85,6 +85,49 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeleteDocument(int id)
+        {
+            try
+            {
+                var userIdString = User.FindFirst("userId")?.Value;
+                if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+                var patientId = Guid.Parse(userIdString);
+
+                // 1. Find the document in the DB
+                var document = await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == id && d.PatientId == patientId);
+
+                if (document == null) return NotFound("Document not found or unauthorized.");
+
+                // 2. Delete the physical file from S3
+                string bucketName = _config["AWS:BucketName"] ?? "medicare-vault-storage-2026-ddac";
+                bool s3Deleted = await _storageService.DeleteFileAsync(document.FileUrl, bucketName);
+
+                if (!s3Deleted) return StatusCode(500, "Failed to delete file from cloud storage.");
+
+                // 3. Remove from SQL Database
+                _context.Documents.Remove(document);
+                await _context.SaveChangesAsync();
+
+                // 4. THE CLOUD FLEX: Audit the deletion
+                await _eventBridge.PublishAuditAsync("DocumentDeleted", new {
+                    DocumentId = id,
+                    FileName = document.FileName,
+                    PatientId = patientId,
+                    Action = "PERMANENT_DELETE",
+                    Timestamp = DateTime.UtcNow
+                });
+
+                return Ok(new { message = "Document permanently deleted and logged." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Delete Error: {ex.Message}");
+            }
+        }
+
         [HttpGet("mine")]
         public IActionResult GetMyDocuments()
         {
