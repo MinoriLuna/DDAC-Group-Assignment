@@ -128,7 +128,7 @@ export default function PatientDashboard() {
             <nav className="flex flex-col gap-3">
               <Link href="/patient/profile" className="text-gray-600 hover:text-red-600 font-bold text-sm transition-colors">My Profile</Link>
               <Link href="/patient/history" className="text-gray-600 hover:text-red-600 font-bold text-sm transition-colors">Lab Results</Link>
-              <button className="text-left text-red-600 hover:underline font-black text-sm mt-2">Log Out</button>
+              <button className="text-left text-red-600 hover:underline font-black text-sm">Log Out</button>
             </nav>
           </div>
 

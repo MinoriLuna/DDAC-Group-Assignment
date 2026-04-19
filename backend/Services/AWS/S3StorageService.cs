@@ -41,4 +41,28 @@ public class S3StorageService : IStorageService
 
         return $"https://{bucketName}.s3.amazonaws.com/{key}";
     }
+
+    public async Task<bool> DeleteFileAsync(string fileUrl, string bucketName)
+    {
+        try
+        {
+            using var s3Client = GetS3Client();
+            Uri uri = new Uri(fileUrl);
+            string key = uri.AbsolutePath.TrimStart('/'); 
+            
+            var deleteRequest = new Amazon.S3.Model.DeleteObjectRequest
+            {
+                BucketName = bucketName,
+                Key = key
+            };
+
+            await s3Client.DeleteObjectAsync(deleteRequest);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"S3 Delete Error: {ex.Message}");
+            return false;
+        }
+    }
 }
