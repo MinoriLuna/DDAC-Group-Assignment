@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using backend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
-using System.Security.Claims;
-using Microsoft.Extensions.Configuration; // Added for config access
 using backend.Services.AWS; 
 
 namespace backend.Controllers
@@ -18,16 +17,19 @@ namespace backend.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config; // Added configuration
         private readonly INotificationService _snsService; // Added for SNS
+        private readonly EventBridgeService _eventBridge;
 
-        public DocumentsController(IStorageService storageService, ApplicationDbContext context, IConfiguration config, INotificationService snsService)
+        public DocumentsController(IStorageService storageService, ApplicationDbContext context, IConfiguration config, INotificationService snsService, EventBridgeService eventBridge)
         {
             _storageService = storageService;
             _context = context;
             _config = config; // Injecting config
             _snsService = snsService; // Injecting SNS service
+            _eventBridge = eventBridge; // Injecting EventBridge service
         }
 
         // --- 1. UPLOAD NEW RECORD TO S3 VAULT & SAVE TO DB ---
+        [Authorize]
         [HttpPost("upload")]
         public async Task<IActionResult> UploadDocument(IFormFile file)
         {
@@ -40,13 +42,12 @@ namespace backend.Controllers
                 var userId = Guid.Parse(userIdValue);
 
                 // 1. Get the real bucket name from appsettings.json
-                // If it's missing, it falls back to a default string
                 string bucketName = _config["AWS:BucketName"] ?? "medicare-vault-storage-2026-ddac";
 
-                // 2. Storage Upload (Now uses the dynamic bucket name)
+                // 2. Storage Upload
                 string fileUrl = await _storageService.UploadFileAsync(file, bucketName, "records");
 
-                // 3. Database Save
+                // 3. Database Save (Using your specific column/property names)
                 var doc = new MedicalDocument 
                 { 
                     PatientId = userId, 
@@ -60,17 +61,26 @@ namespace backend.Controllers
                 _context.Documents.Add(doc);
                 await _context.SaveChangesAsync();
 
-                // 4. Send Cloud Notification
+                // --- CLOUD LOGIC A: EventBridge (Permanent Audit in CloudWatch) ---
+                await _eventBridge.PublishAuditAsync("DocumentUpload", new {
+                    Id = doc.Id, // Matches your [Key] column
+                    FileName = file.FileName,
+                    PatientId = userId,
+                    S3Url = fileUrl,
+                    FileSize = doc.FileSize,
+                    Timestamp = DateTime.UtcNow
+                });
+
+                // --- CLOUD LOGIC B: SNS (The Email Notification) ---
                 await _snsService.SendNotificationAsync(
                     "Medical Record Uploaded",
                     $"Hello! A new medical document '{file.FileName}' has been securely uploaded to the vault for Patient ID: {userId}."
                 );
 
-                return Ok(new { url = fileUrl, fileName = file.FileName });
+                return Ok(new { url = fileUrl, fileName = file.FileName, id = doc.Id });
             }
             catch (Exception ex)
             {
-                // This will now catch the "Bucket does not exist" error if the name is wrong
                 return StatusCode(500, $"Upload Error: {ex.Message}");
             }
         }

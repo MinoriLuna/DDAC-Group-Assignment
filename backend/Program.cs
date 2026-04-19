@@ -50,15 +50,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-// In the future replace with real implementations
+// Mock Implementations
 //builder.Services.AddScoped<IStorageService, MockStorageService>();
 //builder.Services.AddScoped<INotificationService, MockNotificationService>();
-builder.Services.AddScoped<IMessageQueue, MockQueueService>();
 
-//AWS Services (Uncomment when ready to test with real AWS services)
+//AWS Services
 builder.Services.AddScoped<IStorageService, S3StorageService>();
-//builder.Services.AddScoped<IMessageQueue, SqsQueueService>();
 builder.Services.AddScoped<INotificationService, SnsNotificationService>();
+builder.Services.AddScoped<EventBridgeService>();
 
 // Build
 var app = builder.Build();
