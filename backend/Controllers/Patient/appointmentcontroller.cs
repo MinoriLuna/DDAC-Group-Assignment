@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
 using backend.Services.Interfaces;
-using Npgsql;
+using backend.Services.AWS; 
 
 namespace backend.Controllers;
 
@@ -14,15 +14,19 @@ public class AppointmentController : ControllerBase
 {
     private readonly ApplicationDbContext _context; 
     private readonly IConfiguration _config; 
-    private readonly IMessageQueue _queue;
     private readonly INotificationService _notification;
-    
-    public AppointmentController(ApplicationDbContext context, IConfiguration config, IMessageQueue queue, INotificationService notification)
+    private readonly EventBridgeService _eventBridge; // Added EventBridge
+
+    public AppointmentController(
+        ApplicationDbContext context, 
+        IConfiguration config, 
+        INotificationService notification,
+        EventBridgeService eventBridge) // Injected here
     {
         _context = context;
         _config = config;
-        _queue = queue;
         _notification = notification;
+        _eventBridge = eventBridge;
     }
 
     // GET: api/appointment/doctors
@@ -67,13 +71,15 @@ public class AppointmentController : ControllerBase
             _context.Appointments.Add(newAppointment);
             await _context.SaveChangesAsync(); 
 
-            // --- CLOUD LOGIC A: SQS (The Queue) ---
-            var notificationPayload = new {
+            // --- CLOUD LOGIC A: EventBridge (Permanent Audit Log in CloudWatch) ---
+            await _eventBridge.PublishAuditAsync("AppointmentBooked", new {
+                AppointmentId = newAppointment.AppointmentId,
                 PatientId = patientId,
-                Message = $"Appointment confirmed for {request.AppointmentDate}",
-                TargetPhone = "012-3456789" 
-            };
-            await _queue.AddToQueueAsync("appointment-notifications", notificationPayload);
+                DoctorId = request.DoctorId,
+                Date = request.AppointmentDate,
+                Time = request.AppointmentTime,
+                Timestamp = DateTime.UtcNow
+            });
 
             // --- CLOUD LOGIC B: SNS (The Email Notification) ---
             string subject = "Appointment Booking Confirmed";
@@ -82,7 +88,7 @@ public class AppointmentController : ControllerBase
             await _notification.SendNotificationAsync(subject, msg);
 
             return Ok(new { 
-                message = "Appointment booked and notification sent!", 
+                message = "Appointment booked and audit log archived!", 
                 appointmentId = newAppointment.AppointmentId 
             });
         }
@@ -144,19 +150,21 @@ public class AppointmentController : ControllerBase
             appointment.Status = AppointmentStatus.Cancelled;
             await _context.SaveChangesAsync();
 
-            // Cloud Feature A: Notify via Queue
-            await _queue.AddToQueueAsync("appointment-notifications", new {
+            // Cloud Feature A: EventBridge Audit
+            await _eventBridge.PublishAuditAsync("AppointmentCancelled", new {
                 Action = "CANCELLED",
-                AppointmentId = id
+                AppointmentId = id,
+                PatientId = patientId,
+                Timestamp = DateTime.UtcNow
             });
 
-            // Cloud Feature B: Notify via Email (Fixed from SendSmsAsync)
+            // Cloud Feature B: Notify via Email
             await _notification.SendNotificationAsync(
                 "Appointment Cancelled", 
                 $"Your appointment on {appointment.AppointmentDate} has been successfully cancelled."
             );
 
-            return Ok(new { message = "Appointment cancelled successfully." });
+            return Ok(new { message = "Appointment cancelled and logged successfully." });
         }
         catch (Exception ex)
         {
@@ -170,5 +178,5 @@ public class BookAppointmentRequest
     public Guid DoctorId { get; set; }
     public DateOnly AppointmentDate { get; set; }
     public TimeOnly AppointmentTime { get; set; }
-    public string Reason { get; set; } = string.Empty; // Fixed warning
+    public string Reason { get; set; } = string.Empty;
 }
