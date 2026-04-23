@@ -37,7 +37,7 @@
           "buildTransitive/net8.0/AWSSDK.Extensions.NETCore.Setup.targets": {}
         }
       },
-      "AWSSDK.S3/4.0.21.1": {
+      "AWSSDK.S3/4.0.21.2": {
         "type": "package",
         "dependencies": {
           "AWSSDK.Core": "[4.0.3.29, 5.0.0)"
@@ -1199,17 +1199,17 @@
         "lib/netstandard2.0/AWSSDK.Extensions.NETCore.Setup.xml"
       ]
     },
-    "AWSSDK.S3/4.0.21.1": {
-      "sha512": "SCXThk+p+32EqsJIQDtz4Ni0ny9MRV2o0UvorVbqQuUt7MUVgpm+fwouZ6rG4AUg2U+h8/Ixx22WUg0dP2bsBA==",
+    "AWSSDK.S3/4.0.21.2": {
+      "sha512": "3Yeh5DjpfnmKKW8z1684LxUWBVau1ozmLY9vpLhwv9uqCa2S3wk6xK7KCBSlM2i6RQ14Wabyqfqo1Y27etE00Q==",
       "type": "package",
-      "path": "awssdk.s3/4.0.21.1",
+      "path": "awssdk.s3/4.0.21.2",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "analyzers/dotnet/cs/AWSSDK.S3.CodeAnalysis.dll",
         "analyzers/dotnet/cs/SharedAnalysisCode.dll",
-        "awssdk.s3.4.0.21.1.nupkg.sha512",
+        "awssdk.s3.4.0.21.2.nupkg.sha512",
         "awssdk.s3.nuspec",
         "images/AWSLogo.png",
         "lib/net472/AWSSDK.S3.dll",
@@ -3125,7 +3125,7 @@
   "projectFileDependencyGroups": {
     "net8.0": [
       "AWSSDK.Extensions.NETCore.Setup >= 4.0.3.33",
-      "AWSSDK.S3 >= 4.0.21.1",
+      "AWSSDK.S3 >= 4.0.21.2",
       "AWSSDK.SQS >= 4.0.2.25",
       "AWSSDK.SimpleNotificationService >= 4.0.2.27",
       "BCrypt.Net-Next >= 4.1.0",
@@ -3193,7 +3193,7 @@
           },
           "AWSSDK.S3": {
             "target": "Package",
-            "version": "[4.0.21.1, )"
+            "version": "[4.0.21.2, )"
           },
           "AWSSDK.SQS": {
             "target": "Package",

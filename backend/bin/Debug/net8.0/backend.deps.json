@@ -9,7 +9,7 @@
       "backend/1.0.0": {
         "dependencies": {
           "AWSSDK.Extensions.NETCore.Setup": "4.0.3.33",
-          "AWSSDK.S3": "4.0.21.1",
+          "AWSSDK.S3": "4.0.21.2",
           "AWSSDK.SQS": "4.0.2.25",
           "AWSSDK.SimpleNotificationService": "4.0.2.27",
           "BCrypt.Net-Next": "4.1.0",
@@ -46,14 +46,14 @@
           }
         }
       },
-      "AWSSDK.S3/4.0.21.1": {
+      "AWSSDK.S3/4.0.21.2": {
         "dependencies": {
           "AWSSDK.Core": "4.0.3.29"
         },
         "runtime": {
           "lib/net8.0/AWSSDK.S3.dll": {
             "assemblyVersion": "4.0.0.0",
-            "fileVersion": "4.0.21.1"
+            "fileVersion": "4.0.21.2"
           }
         }
       },
@@ -753,12 +753,12 @@
       "path": "awssdk.extensions.netcore.setup/4.0.3.33",
       "hashPath": "awssdk.extensions.netcore.setup.4.0.3.33.nupkg.sha512"
     },
-    "AWSSDK.S3/4.0.21.1": {
+    "AWSSDK.S3/4.0.21.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-SCXThk+p+32EqsJIQDtz4Ni0ny9MRV2o0UvorVbqQuUt7MUVgpm+fwouZ6rG4AUg2U+h8/Ixx22WUg0dP2bsBA==",
-      "path": "awssdk.s3/4.0.21.1",
-      "hashPath": "awssdk.s3.4.0.21.1.nupkg.sha512"
+      "sha512": "sha512-3Yeh5DjpfnmKKW8z1684LxUWBVau1ozmLY9vpLhwv9uqCa2S3wk6xK7KCBSlM2i6RQ14Wabyqfqo1Y27etE00Q==",
+      "path": "awssdk.s3/4.0.21.2",
+      "hashPath": "awssdk.s3.4.0.21.2.nupkg.sha512"
     },
     "AWSSDK.SimpleNotificationService/4.0.2.27": {
       "type": "package",
