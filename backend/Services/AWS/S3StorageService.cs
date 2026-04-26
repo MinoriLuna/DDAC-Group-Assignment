@@ -3,7 +3,7 @@ using Amazon.S3.Transfer;
 using backend.Services.Interfaces;
 using Amazon.Runtime;
 
-namespace backend.Services.AWS; // Double check this namespace matches your folder structure
+namespace backend.Services.AWS;
 
 public class S3StorageService : IStorageService
 {
@@ -16,13 +16,11 @@ public class S3StorageService : IStorageService
 
     private IAmazonS3 GetS3Client()
     {
-        // This pulls your keys from appsettings 
         var credentials = new SessionAWSCredentials(
             _config["AWS:AccessKey"],
             _config["AWS:SecretKey"],
             _config["AWS:SessionToken"]
         );
-
         return new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1);
     }
 
@@ -30,7 +28,7 @@ public class S3StorageService : IStorageService
     {
         using var s3Client = GetS3Client();
         var fileTransferUtility = new TransferUtility(s3Client);
-        
+
         string fileName = $"{Guid.NewGuid()}_{file.FileName}";
         string key = string.IsNullOrEmpty(prefix) ? fileName : $"{prefix}/{fileName}";
 
@@ -48,8 +46,8 @@ public class S3StorageService : IStorageService
         {
             using var s3Client = GetS3Client();
             Uri uri = new Uri(fileUrl);
-            string key = uri.AbsolutePath.TrimStart('/'); 
-            
+            string key = uri.AbsolutePath.TrimStart('/');
+
             var deleteRequest = new Amazon.S3.Model.DeleteObjectRequest
             {
                 BucketName = bucketName,
