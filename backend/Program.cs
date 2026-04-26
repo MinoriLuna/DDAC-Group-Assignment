@@ -65,10 +65,16 @@ var app = builder.Build();
 
 app.UseCors("AllowNextJs");
 
-app.UseAuthentication(); // "Who are you?"
-app.UseAuthorization();  // "Do you have permission to be here?"
+// Serve Next.js static export from wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
-// 3. The Routes
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
+
+// Fallback: any unmatched route serves the Next.js shell
+app.MapFallbackToFile("index.html");
 
 app.Run();
