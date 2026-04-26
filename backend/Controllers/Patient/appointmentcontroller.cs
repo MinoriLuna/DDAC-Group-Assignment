@@ -68,18 +68,22 @@ public class AppointmentController : ControllerBase
             _context.Appointments.Add(newAppointment);
             await _context.SaveChangesAsync(); 
 
+            var patient = await _context.Users.FirstOrDefaultAsync(u => u.UserId == patientId);
+            var doctor  = await _context.Users.FirstOrDefaultAsync(u => u.UserId == request.DoctorId);
+
             // --- CLOUD LOGIC A: SQS (The Queue) ---
-            var notificationPayload = new {
+            await _queue.AddToQueueAsync("appointment-notifications", new {
                 PatientId = patientId,
                 Message = $"Appointment confirmed for {request.AppointmentDate}",
-                TargetPhone = "012-3456789" 
-            };
-            await _queue.AddToQueueAsync("appointment-notifications", notificationPayload);
+                TargetPhone = patient?.Phone ?? ""
+            });
 
             // --- CLOUD LOGIC B: SNS (The Real-time SMS) ---
-            // In a real app, you'd fetch the user's real phone from the DB first
-            string msg = $"Booking Confirmed! See you on {request.AppointmentDate} at {request.AppointmentTime}.";
-            await _notification.SendSmsAsync("+60123456789", msg); //Fake one rn
+            if (patient != null && !string.IsNullOrEmpty(patient.Phone))
+            {
+                string msg = $"Hi {patient.FullName}, your appointment with Dr. {doctor?.FullName} is confirmed for {request.AppointmentDate} at {request.AppointmentTime}. See you soon!";
+                await _notification.SendSmsAsync(patient.Phone, msg);
+            }
 
             return Ok(new { 
                 message = "Appointment booked and SMS notification sent!", 

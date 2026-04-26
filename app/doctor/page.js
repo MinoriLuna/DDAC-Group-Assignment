@@ -28,6 +28,17 @@ export default function DoctorDashboard() {
   };
 
   const today = new Date().toISOString().split('T')[0];
+
+  // Week range (Mon–Sun of current week)
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const weekStartStr = weekStart.toISOString().split('T')[0];
+  const weekEndStr = weekEnd.toISOString().split('T')[0];
+
   const todayList = appointments.filter((a) =>
     String(a.appointmentDate).startsWith(today),
   );
@@ -36,10 +47,30 @@ export default function DoctorDashboard() {
     .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate))
     .slice(0, 5);
 
+  const completedCount = appointments.filter(
+    (a) => a.status === 'Completed',
+  ).length;
+  const cancelledCount = appointments.filter(
+    (a) => a.status === 'Cancelled',
+  ).length;
+  const finishedCount = completedCount + cancelledCount;
+  const completionRate =
+    finishedCount > 0 ? Math.round((completedCount / finishedCount) * 100) : 0;
+
+  const thisWeekCount = appointments.filter((a) => {
+    const d = String(a.appointmentDate).split('T')[0];
+    return d >= weekStartStr && d <= weekEndStr;
+  }).length;
+
+  const totalPatients = new Set(appointments.map((a) => a.patientId)).size;
+
   const stats = {
     today: todayList.length,
     pending: appointments.filter((a) => a.status === 'Pending').length,
-    completed: appointments.filter((a) => a.status === 'Completed').length,
+    completed: completedCount,
+    thisWeek: thisWeekCount,
+    totalPatients,
+    completionRate,
   };
 
   const formatDateTime = (dateStr, timeStr) => {
@@ -180,10 +211,34 @@ export default function DoctorDashboard() {
                 color="text-orange-500"
               />
               <StatItem
-                label="Completed"
+                label="Completed (all time)"
                 value={stats.completed}
                 color="text-green-600"
               />
+            </ul>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-50">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6 font-mono">
+              OVERVIEW
+            </h3>
+            <ul className="space-y-4">
+              <StatItem
+                label="This week"
+                value={stats.thisWeek}
+                color="text-blue-600"
+              />
+              <StatItem
+                label="Total patients"
+                value={stats.totalPatients}
+                color="text-purple-600"
+              />
+              <li className="flex justify-between items-center border-b border-gray-50 pb-2">
+                <span className="text-gray-600 text-sm">Completion rate</span>
+                <span className="text-teal-600 font-bold text-lg">
+                  {stats.completionRate}%
+                </span>
+              </li>
             </ul>
           </div>
 

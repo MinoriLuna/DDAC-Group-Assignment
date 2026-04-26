@@ -34,5 +34,14 @@ public class User
     public string? Department { get; set; }       
 
     [Column("isavailable")]
-    public bool IsAvailable { get; set; } = true;  
+    public bool IsAvailable { get; set; } = true;
+
+    [Column("availabledays")]
+    public string? AvailableDays { get; set; }   // e.g. "Mon,Tue,Wed,Thu,Fri"
+
+    [Column("availablefrom")]
+    public string? AvailableFrom { get; set; }   // e.g. "09:00"
+
+    [Column("availableto")]
+    public string? AvailableTo { get; set; }     // e.g. "17:00"
 }

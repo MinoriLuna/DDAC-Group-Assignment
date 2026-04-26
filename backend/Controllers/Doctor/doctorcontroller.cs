@@ -59,7 +59,10 @@ public class DoctorController : ControllerBase
                 specialization = user.Specialization,
                 licenseNumber  = user.LicenseNumber,
                 department     = user.Department,
-                isAvailable    = user.IsAvailable
+                isAvailable    = user.IsAvailable,
+                availableDays  = user.AvailableDays,
+                availableFrom  = user.AvailableFrom,
+                availableTo    = user.AvailableTo
             });
         }
         catch (Exception ex)
@@ -86,6 +89,9 @@ public class DoctorController : ControllerBase
             if (request.Department     != null) user.Department     = request.Department;
             if (request.Phone          != null) user.Phone          = request.Phone;
             if (request.IsAvailable.HasValue)    user.IsAvailable    = request.IsAvailable.Value;
+            if (request.AvailableDays  != null) user.AvailableDays  = request.AvailableDays;
+            if (request.AvailableFrom  != null) user.AvailableFrom  = request.AvailableFrom;
+            if (request.AvailableTo    != null) user.AvailableTo    = request.AvailableTo;
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Profile updated successfully." });
@@ -414,6 +420,42 @@ public class DoctorController : ControllerBase
         }
     }
 
+    // GET api/doctor/patients/{patientId}/documents
+    [HttpGet("patients/{patientId}/documents")]
+    public IActionResult GetPatientDocuments(Guid patientId)
+    {
+        try
+        {
+            var doctorId = GetCurrentUserId();
+
+            var hasRelation = _context.Appointments
+                .Any(a => a.DoctorId == doctorId && a.PatientId == patientId);
+
+            if (!hasRelation)
+                return NotFound(new { message = "Patient not found or access denied." });
+
+            var docs = _context.Documents
+                .Where(d => d.PatientId == patientId)
+                .OrderByDescending(d => d.UploadDate)
+                .Select(d => new
+                {
+                    id           = d.Id,
+                    name         = d.FileName,
+                    documentType = d.DocumentType,
+                    fileSize     = d.FileSize,
+                    url          = d.FileUrl,
+                    uploadDate   = d.UploadDate.ToString("yyyy-MM-dd")
+                })
+                .ToList();
+
+            return Ok(docs);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Server Error", details = ex.Message });
+        }
+    }
+
     // POST api/doctor/prescriptions
     [HttpPost("prescriptions")]
     public async Task<IActionResult> CreatePrescription(
@@ -477,6 +519,90 @@ public class DoctorController : ControllerBase
             return StatusCode(500, new { message = "Server Error", details = ex.Message });
         }
     }
+
+    // PUT api/doctor/prescriptions/{id}
+    [HttpPut("prescriptions/{id}")]
+    public async Task<IActionResult> UpdatePrescription(Guid id, [FromBody] UpdatePrescriptionRequest request)
+    {
+        try
+        {
+            var doctorId = GetCurrentUserId();
+            var prescription = await _context.Prescriptions
+                .FirstOrDefaultAsync(p => p.Id == id && p.DoctorId == doctorId);
+
+            if (prescription == null)
+                return NotFound(new { message = "Prescription not found." });
+
+            if (request.Diagnosis     != null) prescription.Diagnosis     = request.Diagnosis;
+            if (request.Medicines     != null) prescription.Medicines     = request.Medicines;
+            if (request.Instructions  != null) prescription.Instructions  = request.Instructions;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Prescription updated." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Server Error", details = ex.Message });
+        }
+    }
+
+    // POST api/doctor/patients/{patientId}/refer
+    [HttpPost("patients/{patientId}/refer")]
+    public async Task<IActionResult> ReferPatient(Guid patientId, [FromBody] ReferPatientRequest request)
+    {
+        try
+        {
+            var doctorId = GetCurrentUserId();
+
+            var hasRelation = _context.Appointments
+                .Any(a => a.DoctorId == doctorId && a.PatientId == patientId);
+
+            if (!hasRelation)
+                return NotFound(new { message = "Patient not found or access denied." });
+
+            var referringDoctor = await _context.Users.FirstOrDefaultAsync(u => u.UserId == doctorId);
+            var targetDoctor    = await _context.Users.FirstOrDefaultAsync(u => u.UserId == request.ToDoctorId && u.Role == "Doctor");
+            var patient         = await _context.Users.FirstOrDefaultAsync(u => u.UserId == patientId);
+
+            if (targetDoctor == null)
+                return NotFound(new { message = "Target doctor not found." });
+
+            var referral = new Appointment
+            {
+                PatientId       = patientId,
+                DoctorId        = request.ToDoctorId,
+                AppointmentDate = request.AppointmentDate,
+                AppointmentTime = request.AppointmentTime,
+                Reason          = $"Referred by Dr. {referringDoctor?.FullName}: {request.Reason}",
+                Status          = AppointmentStatus.Pending
+            };
+
+            _context.Appointments.Add(referral);
+            await _context.SaveChangesAsync();
+
+            if (patient != null && !string.IsNullOrEmpty(patient.Phone))
+            {
+                await _notification.SendSmsAsync(patient.Phone,
+                    $"Hi {patient.FullName}, Dr. {referringDoctor?.FullName} has referred you to Dr. {targetDoctor.FullName} on {request.AppointmentDate} at {request.AppointmentTime}. Please confirm via MediCare+.");
+            }
+
+            await _queue.AddToQueueAsync("appointment-events", new
+            {
+                Event           = "PatientReferred",
+                AppointmentId   = referral.AppointmentId,
+                ReferredBy      = doctorId,
+                ReferredTo      = request.ToDoctorId,
+                PatientId       = patientId,
+                Timestamp       = DateTime.UtcNow
+            });
+
+            return Ok(new { message = $"Patient referred to Dr. {targetDoctor.FullName}. Appointment created.", appointmentId = referral.AppointmentId });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Server Error", details = ex.Message });
+        }
+    }
 }
 
 // DTOs
@@ -488,6 +614,9 @@ public class UpdateDoctorProfileRequest
     public string? Department     { get; set; }
     public string? Phone          { get; set; }
     public bool?   IsAvailable    { get; set; }
+    public string? AvailableDays  { get; set; }
+    public string? AvailableFrom  { get; set; }
+    public string? AvailableTo    { get; set; }
 }
 
 public class UpdateAppointmentStatusRequest
@@ -509,4 +638,19 @@ public class CreatePrescriptionRequest
     public string  Diagnosis     { get; set; } = string.Empty;
     public string  Medicines     { get; set; } = string.Empty;
     public string? Instructions  { get; set; }
+}
+
+public class UpdatePrescriptionRequest
+{
+    public string? Diagnosis     { get; set; }
+    public string? Medicines     { get; set; }
+    public string? Instructions  { get; set; }
+}
+
+public class ReferPatientRequest
+{
+    public Guid     ToDoctorId      { get; set; }
+    public DateOnly AppointmentDate { get; set; }
+    public TimeOnly AppointmentTime { get; set; }
+    public string   Reason          { get; set; } = string.Empty;
 }

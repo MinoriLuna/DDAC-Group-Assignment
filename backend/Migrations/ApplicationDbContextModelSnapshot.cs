@@ -226,6 +226,22 @@ namespace backend.Migrations
                         .HasColumnType("text")
                         .HasColumnName("specialization");
 
+                    b.Property<string>("LicenseNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("licensenumber");
+
+                    b.Property<string>("AvailableDays")
+                        .HasColumnType("text")
+                        .HasColumnName("availabledays");
+
+                    b.Property<string>("AvailableFrom")
+                        .HasColumnType("text")
+                        .HasColumnName("availablefrom");
+
+                    b.Property<string>("AvailableTo")
+                        .HasColumnType("text")
+                        .HasColumnName("availableto");
+
                     b.HasKey("UserId");
 
                     b.ToTable("users", "public");

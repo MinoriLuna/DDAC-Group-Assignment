@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export default function DoctorProfilePage() {
   const [profile, setProfile] = useState(null);
   const [editData, setEditData] = useState({});
@@ -29,6 +31,9 @@ export default function DoctorProfilePage() {
           department: data.department || '',
           phone: data.phone || '',
           isAvailable: data.isAvailable ?? true,
+          availableDays: data.availableDays || '',
+          availableFrom: data.availableFrom || '09:00',
+          availableTo: data.availableTo || '17:00',
         });
       }
     } catch (err) {
@@ -37,6 +42,20 @@ export default function DoctorProfilePage() {
       setLoading(false);
     }
   };
+
+  const toggleDay = (day) => {
+    const current = editData.availableDays
+      ? editData.availableDays.split(',').filter(Boolean)
+      : [];
+    const updated = current.includes(day)
+      ? current.filter((d) => d !== day)
+      : [...current, day];
+    setEditData({ ...editData, availableDays: updated.join(',') });
+  };
+
+  const selectedDays = editData.availableDays
+    ? editData.availableDays.split(',').filter(Boolean)
+    : [];
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -80,6 +99,10 @@ export default function DoctorProfilePage() {
       </div>
     );
 
+  const viewDays = profile.availableDays
+    ? profile.availableDays.split(',').filter(Boolean)
+    : [];
+
   return (
     <div className="p-10 max-w-2xl mx-auto">
       <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
@@ -106,7 +129,6 @@ export default function DoctorProfilePage() {
           </button>
         </div>
 
-        {/* SUCCESS MESSAGE */}
         {savedMsg && (
           <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-semibold text-sm">
             ✅ {savedMsg}
@@ -128,17 +150,13 @@ export default function DoctorProfilePage() {
             <InputField
               label="Specialization"
               value={editData.specialization}
-              onChange={(val) =>
-                setEditData({ ...editData, specialization: val })
-              }
+              onChange={(val) => setEditData({ ...editData, specialization: val })}
               placeholder="e.g. General Practitioner, Cardiologist"
             />
             <InputField
               label="License Number"
               value={editData.licenseNumber}
-              onChange={(val) =>
-                setEditData({ ...editData, licenseNumber: val })
-              }
+              onChange={(val) => setEditData({ ...editData, licenseNumber: val })}
               placeholder="e.g. MMC/2020/12345"
             />
             <InputField
@@ -164,10 +182,7 @@ export default function DoctorProfilePage() {
                 <button
                   type="button"
                   onClick={() =>
-                    setEditData({
-                      ...editData,
-                      isAvailable: !editData.isAvailable,
-                    })
+                    setEditData({ ...editData, isAvailable: !editData.isAvailable })
                   }
                   className={`w-12 h-6 rounded-full transition-colors relative ${
                     editData.isAvailable ? 'bg-green-500' : 'bg-gray-300'
@@ -179,6 +194,65 @@ export default function DoctorProfilePage() {
                     }`}
                   />
                 </button>
+              </div>
+            </div>
+
+            {/* WORKING DAYS */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                Working Days
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {DAYS.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wide transition-all ${
+                      selectedDays.includes(day)
+                        ? 'bg-red-600 text-white'
+                        : 'bg-white border border-gray-200 text-gray-500 hover:border-red-300'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* WORKING HOURS */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                Working Hours
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                    From
+                  </label>
+                  <input
+                    type="time"
+                    value={editData.availableFrom}
+                    onChange={(e) =>
+                      setEditData({ ...editData, availableFrom: e.target.value })
+                    }
+                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-gray-800 font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+                <span className="text-gray-400 font-bold mt-5">–</span>
+                <div className="flex-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                    To
+                  </label>
+                  <input
+                    type="time"
+                    value={editData.availableTo}
+                    onChange={(e) =>
+                      setEditData({ ...editData, availableTo: e.target.value })
+                    }
+                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-gray-800 font-semibold outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -196,18 +270,10 @@ export default function DoctorProfilePage() {
             <InfoItem label="Full Name" value={profile.fullName} />
             <InfoItem label="Email" value={profile.email} />
             <InfoItem label="Phone" value={profile.phone || 'Not set'} />
-            <InfoItem
-              label="Specialization"
-              value={profile.specialization || 'Not set'}
-            />
-            <InfoItem
-              label="License Number"
-              value={profile.licenseNumber || 'Not set'}
-            />
-            <InfoItem
-              label="Department"
-              value={profile.department || 'Not set'}
-            />
+            <InfoItem label="Specialization" value={profile.specialization || 'Not set'} />
+            <InfoItem label="License Number" value={profile.licenseNumber || 'Not set'} />
+            <InfoItem label="Department" value={profile.department || 'Not set'} />
+
             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center">
               <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
@@ -220,6 +286,37 @@ export default function DoctorProfilePage() {
               <span
                 className={`w-3 h-3 rounded-full ${profile.isAvailable ? 'bg-green-500' : 'bg-gray-300'}`}
               />
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                Working Days
+              </p>
+              {viewDays.length > 0 ? (
+                <div className="flex gap-2 flex-wrap">
+                  {viewDays.map((d) => (
+                    <span
+                      key={d}
+                      className="bg-red-50 text-red-700 px-3 py-1 rounded-lg text-xs font-black uppercase"
+                    >
+                      {d}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="font-bold text-gray-400">Not set</p>
+              )}
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                Working Hours
+              </p>
+              <p className="font-bold text-gray-900">
+                {profile.availableFrom && profile.availableTo
+                  ? `${profile.availableFrom} – ${profile.availableTo}`
+                  : 'Not set'}
+              </p>
             </div>
           </div>
         )}
