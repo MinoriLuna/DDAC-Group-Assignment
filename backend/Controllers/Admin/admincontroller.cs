@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
-using backend.Services.Interfaces;
 
 namespace backend.Controllers.Admin;
 
@@ -13,12 +12,10 @@ namespace backend.Controllers.Admin;
 public class AdminController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IStorageService _storage;
 
-    public AdminController(ApplicationDbContext context, IStorageService storage)
+    public AdminController(ApplicationDbContext context)
     {
         _context = context;
-        _storage = storage;
     }
 
     // GET: api/admin/stats
@@ -147,59 +144,6 @@ public class AdminController : ControllerBase
         }
     }
 
-    // GET: api/admin/documents
-    [HttpGet("documents")]
-    public IActionResult GetAllDocuments()
-    {
-        try
-        {
-            var documents = _context.Documents
-                .OrderByDescending(d => d.UploadDate)
-                .Select(d => new
-                {
-                    id          = d.Id,
-                    patientName = _context.Users.Where(u => u.UserId == d.PatientId).Select(u => u.FullName).FirstOrDefault(),
-                    name        = d.FileName,
-                    date        = d.UploadDate.ToString("yyyy-MM-dd"),
-                    type        = d.DocumentType,
-                    size        = d.FileSize,
-                    url         = d.FileUrl
-                })
-                .ToList();
-
-            return Ok(documents);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Failed to load documents", details = ex.Message });
-        }
-    }
-
-    // GET: api/admin/documents/{id}/download
-    [HttpGet("documents/{id}/download")]
-    public async Task<IActionResult> DownloadDocument(int id)
-    {
-        try
-        {
-            var doc = await _context.Documents.FindAsync(id);
-            if (doc == null) return NotFound(new { message = "Document not found." });
-
-            // Local mock file — return full URL for frontend to open
-            if (doc.FileUrl.StartsWith("/"))
-            {
-                var fullUrl = $"http://localhost:5230{doc.FileUrl}";
-                return Ok(new { url = fullUrl, fileName = doc.FileName, isRedirect = true });
-            }
-
-            // S3 file — generate a 15-minute pre-signed URL and return it as JSON
-            var downloadUrl = await _storage.GetDownloadUrlAsync(doc.FileUrl, "medical-vault-bucket");
-            return Ok(new { url = downloadUrl, fileName = doc.FileName, isRedirect = true });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Download failed", details = ex.Message });
-        }
-    }
 }
 
 public class UpdateStatusRequest

@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+
 export default function PatientLayout({ children }) {
   const router = useRouter();
   const [userName, setUserName] = useState('Patient');
@@ -45,6 +46,7 @@ export default function PatientLayout({ children }) {
           <SidebarLink href="/patient/appointments" label="My Appointments" />
           <SidebarLink href="/patient/history" label="Medical History" />
           <SidebarLink href="/patient/documents" label="Medical Vault" />
+          <SidebarLink href="/patient/rating" label="Rate Experience" />
         </nav>
 
         {/* --- BOTTOM ACTIONS --- */}
