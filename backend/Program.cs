@@ -58,6 +58,7 @@ builder.Services.AddControllers()
 builder.Services.AddScoped<IStorageService, S3StorageService>();
 builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
+builder.Services.AddScoped<ComprehendService>();
 
 // Build
 var app = builder.Build();

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
+using backend.Services.AWS;
+using backend.Services.Interfaces;
 
 namespace backend.Controllers.Admin;
 
@@ -12,10 +14,14 @@ namespace backend.Controllers.Admin;
 public class AdminController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly ComprehendService _comprehend;
+    private readonly INotificationService _notification;
 
-    public AdminController(ApplicationDbContext context)
+    public AdminController(ApplicationDbContext context, ComprehendService comprehend, INotificationService notification)
     {
         _context = context;
+        _comprehend = comprehend;
+        _notification = notification;
     }
 
     // GET: api/admin/stats
@@ -102,6 +108,29 @@ public class AdminController : ControllerBase
             appointment.Status = newStatus;
             await _context.SaveChangesAsync();
 
+            // Send SNS email notification on Confirmed or Cancelled
+            if (newStatus == AppointmentStatus.Confirmed || newStatus == AppointmentStatus.Cancelled)
+            {
+                var patient = await _context.Users.FindAsync(appointment.PatientId);
+                var doctor  = await _context.Users.FindAsync(appointment.DoctorId);
+
+                var subject = newStatus == AppointmentStatus.Confirmed
+                    ? "Appointment Confirmed – MediCare+"
+                    : "Appointment Cancelled – MediCare+";
+
+                var message = newStatus == AppointmentStatus.Confirmed
+                    ? $"Dear {patient?.FullName} and Dr. {doctor?.FullName},\n\n" +
+                      $"Your appointment on {appointment.AppointmentDate} at {appointment.AppointmentTime} has been CONFIRMED by the clinic admin.\n\n" +
+                      $"Reason: {appointment.Reason ?? "N/A"}\n\n" +
+                      "Please arrive 10 minutes before your scheduled time.\n\nThank you,\nMediCare+ Clinic"
+                    : $"Dear {patient?.FullName} and Dr. {doctor?.FullName},\n\n" +
+                      $"Your appointment on {appointment.AppointmentDate} at {appointment.AppointmentTime} has been CANCELLED by the clinic admin.\n\n" +
+                      $"Reason: {appointment.Reason ?? "N/A"}\n\n" +
+                      "Please contact the clinic to reschedule.\n\nThank you,\nMediCare+ Clinic";
+
+                await _notification.SendNotificationAsync(subject, message);
+            }
+
             return Ok(new { message = "Status updated.", status = newStatus.ToString() });
         }
         catch (Exception ex)
@@ -144,6 +173,52 @@ public class AdminController : ControllerBase
         }
     }
 
+    // GET: api/admin/feedback
+    [HttpGet("feedback")]
+    public async Task<IActionResult> GetPatientFeedback()
+    {
+        try
+        {
+            var reviews = _context.Reviews
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    id          = r.Id,
+                    patientName = _context.Users.Where(u => u.UserId == r.PatientId).Select(u => u.FullName).FirstOrDefault(),
+                    doctorName  = _context.Users.Where(u => u.UserId == r.DoctorId).Select(u => u.FullName).FirstOrDefault(),
+                    rating      = r.Rating,
+                    comment     = r.Comment,
+                    createdAt   = r.CreatedAt.ToString("yyyy-MM-dd")
+                })
+                .ToList();
+
+            // Run Comprehend sentiment analysis on each comment
+            var results = new List<object>();
+            foreach (var r in reviews)
+            {
+                var sentiment = string.IsNullOrWhiteSpace(r.comment)
+                    ? "NEUTRAL"
+                    : await _comprehend.DetectSentimentAsync(r.comment);
+
+                results.Add(new
+                {
+                    r.id,
+                    r.patientName,
+                    r.doctorName,
+                    r.rating,
+                    r.comment,
+                    r.createdAt,
+                    sentiment
+                });
+            }
+
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to load feedback", details = ex.Message });
+        }
+    }
 }
 
 public class UpdateStatusRequest
