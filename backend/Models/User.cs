@@ -23,4 +23,22 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     [Column("createdat")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [Column("dateofbirth")]
+    public DateTime? DateOfBirth { get; set; }
+
+    [Column("gender")]
+    public string? Gender { get; set; }
+
+    [Column("icpassport")]
+    public string? IcPassport { get; set; }
+
+    [Column("emergencycontactname")]
+    public string? EmergencyContactName { get; set; }
+
+    [Column("emergencycontactphone")]
+    public string? EmergencyContactPhone { get; set; }
+
+    [Column("emergencycontactrelation")]
+    public string? EmergencyContactRelation { get; set; }
 }

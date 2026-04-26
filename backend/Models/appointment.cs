@@ -8,7 +8,10 @@ public enum AppointmentStatus
     Pending,
     Confirmed,
     Completed,
-    Cancelled
+    Cancelled,
+    Scheduled,
+    CheckedIn,
+    InConsultation
 }
 
 [Table("appointments", Schema = "public")]
@@ -44,6 +47,12 @@ public class Appointment
 
     [Column("prescription")]
     public string? Prescription { get; set; }
+
+    [Column("checkintime")]
+    public DateTime? CheckInTime { get; set; }
+
+    [Column("cancellationreason")]
+    public string? CancellationReason { get; set; }
 
     [ForeignKey("PatientId")]
     public User? Patient { get; set; }

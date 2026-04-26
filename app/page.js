@@ -44,9 +44,9 @@ export default function LandingPage() {
 
       {/* --- ROLE SECTION --- */}
       <section className="bg-gray-50 py-24 px-8">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Card 1 */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:-translate-y-1">
             <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
               <span className="text-2xl text-red-600">👤</span>
             </div>
@@ -57,7 +57,7 @@ export default function LandingPage() {
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:-translate-y-1">
             <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
               <span className="text-2xl text-red-600">🩺</span>
             </div>
@@ -66,9 +66,20 @@ export default function LandingPage() {
               Streamline your consultations and manage patient records with our AI-powered dashboard.
             </p>
           </div>
+          
+          {/* Card 3 - Receptionist */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:-translate-y-1">
+            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
+              <span className="text-2xl text-red-600">📋</span>
+            </div>
+            <h3 className="text-xl font-bold mb-3">For Receptionists</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">
+              Manage live check-in queues, register new patients, and oversee daily clinic schedules.
+            </p>
+          </div>
 
-          {/* Card 3 */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          {/* Card 4 */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:-translate-y-1">
             <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
               <span className="text-2xl text-red-600">🏢</span>
             </div>

@@ -32,14 +32,14 @@ export default function LoginPage() {
       console.log("---> JWT Saved to LocalStorage");
 
       // Redirect based on role
-      const role = data.user.role;
-      if (role === 'Doctor') {
+      const role = data.user.role?.toLowerCase() || '';
+      if (role === 'doctor') {
         router.push('/doctor');
-      } else if (role === 'Patient') {
+      } else if (role === 'patient') {
         router.push('/patient');
-      } else if (role === 'Receptionist') {
+      } else if (role === 'receptionist') {
         router.push('/receptionist');
-      } else if (role === 'Admin') {
+      } else if (role === 'admin') {
         router.push('/admin');
       } else {
         router.push('/'); // Fallback
@@ -62,14 +62,14 @@ export default function LoginPage() {
             <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
             <input type="email" required
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-red-500 text-black transition-all" 
+              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-red-500 text-black transition-all"
               placeholder="e.g. ashton@gmail.com" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
             <input type="password" required
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-red-500 text-black transition-all" 
+              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-red-500 text-black transition-all"
               placeholder="••••••••" />
           </div>
 
@@ -77,7 +77,7 @@ export default function LoginPage() {
             Log In
           </button>
         </form>
-        
+
         <p className="mt-6 text-center text-sm text-gray-500">
           Don't have an account? <Link href="/register" className="text-red-600 hover:underline font-bold">Register here</Link>
         </p>
