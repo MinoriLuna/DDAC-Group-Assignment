@@ -15,6 +15,19 @@ namespace backend.Services.AWS
             _s3Client = s3Client;
         }
 
+        public async Task<string> GetDownloadUrlAsync(string fileUrl, string bucketName)
+        {
+            // Extract the S3 key from the full URL
+            var key = string.Join("/", fileUrl.Split('/').Skip(3)); // removes https://bucket.s3.amazonaws.com/
+            var request = new Amazon.S3.Model.GetPreSignedUrlRequest
+            {
+                BucketName = bucketName,
+                Key        = key,
+                Expires    = DateTime.UtcNow.AddMinutes(15)
+            };
+            return await Task.FromResult(_s3Client.GetPreSignedURL(request));
+        }
+
         public async Task<string> UploadFileAsync(IFormFile file, string bucketName, string prefix = "")
         {
             using var newStream = new MemoryStream();

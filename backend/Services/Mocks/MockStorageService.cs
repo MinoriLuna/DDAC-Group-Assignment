@@ -40,5 +40,11 @@ namespace backend.Services.Mocks
             // 5. Return the local URL so the frontend can use it
             return $"/{prefix}/{uniqueFileName}";
         }
+
+        public Task<string> GetDownloadUrlAsync(string fileUrl, string bucketName)
+        {
+            // For local files, just return the path as-is (served by ASP.NET static files)
+            return Task.FromResult(fileUrl);
+        }
     }
 }
