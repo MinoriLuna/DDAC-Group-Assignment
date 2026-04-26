@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-const STATUSES = ['All', 'Pending', 'Confirmed', 'InConsultation', 'Completed', 'Cancelled'];
+const STATUSES = ['All', 'Pending', 'Confirmed', 'CheckedIn', 'InConsultation', 'Completed', 'Cancelled'];
 
 const STATUS_STYLES = {
   Pending:       'bg-yellow-100 text-yellow-700',
   Confirmed:     'bg-blue-100 text-blue-700',
+  CheckedIn:     'bg-cyan-100 text-cyan-700',
   InConsultation:'bg-purple-100 text-purple-700',
   Completed:     'bg-green-100 text-green-700',
   Cancelled:     'bg-red-100 text-red-600',

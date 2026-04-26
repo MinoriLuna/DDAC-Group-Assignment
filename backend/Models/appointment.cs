@@ -9,7 +9,8 @@ public enum AppointmentStatus
     Confirmed,
     Completed,
     Cancelled,
-    InConsultation
+    InConsultation,
+    CheckedIn
 }
 
 [Table("appointments", Schema = "public")]

@@ -121,10 +121,10 @@ function SidebarContent({ userName, onLogout, onClose, showClose }) {
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
-        <SidebarLink href="/admin"              label="Dashboard"         onClick={onClose} />
-        <SidebarLink href="/admin/appointments" label="Appointments"     onClick={onClose} />
-        <SidebarLink href="/admin/patients"    label="Patients"          onClick={onClose} />
-        <SidebarLink href="/admin/feedback"    label="Patient Feedback"  onClick={onClose} />
+        <SidebarLink href="/admin"              label="Dashboard"        onClick={onClose} />
+        <SidebarLink href="/admin/appointments" label="Appointments"    onClick={onClose} />
+        <SidebarLink href="/admin/users"       label="Users"            onClick={onClose} />
+        <SidebarLink href="/admin/feedback"    label="Patient Feedback" onClick={onClose} />
       </nav>
 
       <div className="p-4 border-t border-gray-100">

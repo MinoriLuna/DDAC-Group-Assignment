@@ -32,6 +32,7 @@ export default function AdminFeedbackPage() {
   const [error, setError]       = useState(null);
   const [filter, setFilter]     = useState('ALL');
   const [search, setSearch]     = useState('');
+  const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -54,6 +55,20 @@ export default function AdminFeedbackPage() {
     };
     fetchFeedback();
   }, []);
+
+  const deleteReview = async (id) => {
+    setDeleting(id);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5230/api/admin/feedback/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setReviews(prev => prev.filter(r => r.id !== id));
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const filtered = reviews.filter(r => {
     const matchesSentiment = filter === 'ALL' || r.sentiment === filter;
@@ -142,6 +157,7 @@ export default function AdminFeedbackPage() {
                 <th className="px-6 py-3 text-left">Comment</th>
                 <th className="px-6 py-3 text-left">Sentiment</th>
                 <th className="px-6 py-3 text-left">Date</th>
+                <th className="px-6 py-3 text-left"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -162,6 +178,15 @@ export default function AdminFeedbackPage() {
                     </td>
                     <td className="px-6 py-4"><SentimentBadge sentiment={r.sentiment} /></td>
                     <td className="px-6 py-4 text-gray-400 text-xs">{r.createdAt}</td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => deleteReview(r.id)}
+                        disabled={deleting === r.id}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                      >
+                        {deleting === r.id ? '...' : 'Remove'}
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -185,7 +210,16 @@ export default function AdminFeedbackPage() {
                 {r.comment && (
                   <p className="text-sm text-gray-600 leading-relaxed">{r.comment}</p>
                 )}
-                <p className="text-xs text-gray-400">{r.createdAt}</p>
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-xs text-gray-400">{r.createdAt}</p>
+                  <button
+                    onClick={() => deleteReview(r.id)}
+                    disabled={deleting === r.id}
+                    className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                  >
+                    {deleting === r.id ? '...' : 'Remove'}
+                  </button>
+                </div>
               </div>
             ))
           )}

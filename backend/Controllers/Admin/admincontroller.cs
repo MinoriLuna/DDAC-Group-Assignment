@@ -173,6 +173,61 @@ public class AdminController : ControllerBase
         }
     }
 
+    // GET: api/admin/users
+    [HttpGet("users")]
+    public IActionResult GetAllUsers()
+    {
+        try
+        {
+            var users = _context.Users
+                .Where(u => u.Role != "Admin")
+                .OrderBy(u => u.Role)
+                .ThenBy(u => u.FullName)
+                .Select(u => new
+                {
+                    userId            = u.UserId,
+                    fullName          = u.FullName,
+                    email             = u.Email,
+                    phone             = u.Phone,
+                    address           = u.Address,
+                    role              = u.Role,
+                    joinedAt          = u.CreatedAt.ToString("yyyy-MM-dd"),
+                    totalAppointments = _context.Appointments.Count(a => a.PatientId == u.UserId || a.DoctorId == u.UserId)
+                })
+                .ToList();
+
+            return Ok(users);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to load users", details = ex.Message });
+        }
+    }
+
+    // DELETE: api/admin/users/{id}
+    [HttpDelete("users/{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        try
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                return NotFound(new { message = "User not found." });
+
+            if (user.Role == "Admin")
+                return BadRequest(new { message = "Admin accounts cannot be deleted." });
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User deleted." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to delete user", details = ex.Message });
+        }
+    }
+
     // GET: api/admin/feedback
     [HttpGet("feedback")]
     public async Task<IActionResult> GetPatientFeedback()
@@ -196,9 +251,17 @@ public class AdminController : ControllerBase
             var results = new List<object>();
             foreach (var r in reviews)
             {
-                var sentiment = string.IsNullOrWhiteSpace(r.comment)
-                    ? "NEUTRAL"
-                    : await _comprehend.DetectSentimentAsync(r.comment);
+                string sentiment;
+                try
+                {
+                    sentiment = string.IsNullOrWhiteSpace(r.comment)
+                        ? "NEUTRAL"
+                        : await _comprehend.DetectSentimentAsync(r.comment);
+                }
+                catch
+                {
+                    sentiment = "NEUTRAL";
+                }
 
                 results.Add(new
                 {
@@ -217,6 +280,27 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Failed to load feedback", details = ex.Message });
+        }
+    }
+
+    // DELETE: api/admin/feedback/{id}
+    [HttpDelete("feedback/{id}")]
+    public async Task<IActionResult> DeleteReview(int id)
+    {
+        try
+        {
+            var review = await _context.Reviews.FindAsync(id);
+            if (review == null)
+                return NotFound(new { message = "Review not found." });
+
+            _context.Reviews.Remove(review);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Review deleted." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to delete review", details = ex.Message });
         }
     }
 }
