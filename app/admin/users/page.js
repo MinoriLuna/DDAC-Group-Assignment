@@ -21,7 +21,7 @@ export default function AdminUsersPage() {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5230/api/admin/users', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/users`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
     setConfirmId(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5230/api/admin/users/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

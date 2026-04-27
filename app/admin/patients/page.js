@@ -13,7 +13,7 @@ export default function AdminPatientsPage() {
     const fetchPatients = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5230/api/admin/patients', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/patients`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

@@ -23,7 +23,7 @@ export default function BookingPage() {
     const fetchDoctors = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch('http://localhost:5230/api/appointment/doctors', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/doctors`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -56,7 +56,7 @@ export default function BookingPage() {
         Reason: formData.reason
       };
 
-      const res = await fetch('http://localhost:5230/api/appointment/book', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/book`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', // Tell backend we're sending JSON

@@ -12,7 +12,7 @@ export default function PatientDashboard() {
     const fetchAppointments = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5230/api/appointment/mine', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/mine`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

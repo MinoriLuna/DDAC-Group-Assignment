@@ -13,7 +13,7 @@ export default function RateDoctorPage() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const res = await fetch('http://localhost:5230/api/appointment/doctors');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/doctors`);
         if (res.ok) {
           const data = await res.json();
           setDoctors(data);
@@ -34,7 +34,7 @@ export default function RateDoctorPage() {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch('http://localhost:5230/api/reviews/submit', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/reviews/submit`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

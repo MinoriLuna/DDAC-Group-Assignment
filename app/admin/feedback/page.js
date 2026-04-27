@@ -38,7 +38,7 @@ export default function AdminFeedbackPage() {
     const fetchFeedback = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5230/api/admin/feedback', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/feedback`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -60,7 +60,7 @@ export default function AdminFeedbackPage() {
     setDeleting(id);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5230/api/admin/feedback/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/feedback/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

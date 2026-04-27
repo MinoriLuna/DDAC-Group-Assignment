@@ -2,7 +2,6 @@
   "region": "us-east-1",
   "configuration": "Debug",
   "framework": "net8.0",
-  "self-contained": true,
   "application": "MediCareDDAC",
   "environment": "MediCareDDAC-test",
   "enable-xray": false,
@@ -15,5 +14,7 @@
   "key-pair": "vockey",
   "instance-profile": "LabInstanceProfile",
   "service-role": "LabRole",
-  "proxy-server": "nginx"
+  "proxy-server": "nginx",
+  "self-contained": false,
+  "runtime": "linux-x64"
 }
