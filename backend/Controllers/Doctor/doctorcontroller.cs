@@ -578,6 +578,19 @@ public class DoctorController : ControllerBase
             };
 
             _context.Appointments.Add(referral);
+
+            // Auto-complete the most recent active appointment between this doctor and patient
+            var sourceAppointment = await _context.Appointments
+                .Where(a => a.DoctorId == doctorId
+                         && a.PatientId == patientId
+                         && (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed))
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.AppointmentTime)
+                .FirstOrDefaultAsync();
+
+            if (sourceAppointment != null)
+                sourceAppointment.Status = AppointmentStatus.Completed;
+
             await _context.SaveChangesAsync();
 
             if (patient != null && !string.IsNullOrEmpty(patient.Phone))
