@@ -1,20 +1,35 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Services.Interfaces;
-using backend.Services.Mocks; // For Mock Services
-using backend.Services.AWS; // For AWS Services
+using backend.Services.Mocks; 
+using backend.Services.AWS; 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Amazon.S3; // Added
+using Amazon.SimpleNotificationService; // Added
+using Amazon.Comprehend; // Added
+using Amazon.EventBridge; // Added
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database Registry
+// --- 1. AWS SDK REGISTRY (The "Keyless" Entry) ---
+// This tells the app to look for the LabInstanceProfile automatically
+var awsOptions = builder.Configuration.GetAWSOptions();
+builder.Services.AddDefaultAWSOptions(awsOptions);
+
+// Register the actual AWS Clients so they can be injected into your services
+builder.Services.AddAWSService<IAmazonEventBridge>();
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddAWSService<IAmazonSimpleNotificationService>();
+builder.Services.AddAWSService<IAmazonComprehend>();
+
+// --- 2. DATABASE REGISTRY ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// CORS Registry
+// --- 3. CORS REGISTRY ---
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
 {
@@ -26,7 +41,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Auth Registry
+// --- 4. AUTH REGISTRY ---
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -46,21 +61,17 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllers()
 .AddJsonOptions(options => 
     {
-        // This tells C# to ALWAYS send Enums as "Pending" instead of 0
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-// Mock Implementations
-//builder.Services.AddScoped<IStorageService, MockStorageService>();
-//builder.Services.AddScoped<INotificationService, MockNotificationService>();
-
-//AWS Services
+// --- 5. CUSTOM SERVICES REGISTRY ---
+// These now depend on the AWS Clients registered in Step 1
 builder.Services.AddScoped<IStorageService, S3StorageService>();
 builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
 
-// Build
+// --- 6. PIPELINE BUILD ---
 var app = builder.Build();
 
 app.UseCors("AllowNextJs");
