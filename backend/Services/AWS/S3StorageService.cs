@@ -1,33 +1,23 @@
 using Amazon.S3;
 using Amazon.S3.Transfer;
 using backend.Services.Interfaces;
-using Amazon.Runtime;
 
 namespace backend.Services.AWS;
 
 public class S3StorageService : IStorageService
 {
-    private readonly IConfiguration _config;
+    private readonly IAmazonS3 _s3Client; // Inject the client directly
 
-    public S3StorageService(IConfiguration config)
+    // The SDK automatically finds the LabInstanceProfile keys
+    public S3StorageService(IAmazonS3 s3Client)
     {
-        _config = config;
-    }
-
-    private IAmazonS3 GetS3Client()
-    {
-        var credentials = new SessionAWSCredentials(
-            _config["AWS:AccessKey"],
-            _config["AWS:SecretKey"],
-            _config["AWS:SessionToken"]
-        );
-        return new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1);
+        _s3Client = s3Client;
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string bucketName, string prefix = "")
     {
-        using var s3Client = GetS3Client();
-        var fileTransferUtility = new TransferUtility(s3Client);
+        // No 'using' block needed here because DI manages the client lifetime
+        var fileTransferUtility = new TransferUtility(_s3Client);
 
         string fileName = $"{Guid.NewGuid()}_{file.FileName}";
         string key = string.IsNullOrEmpty(prefix) ? fileName : $"{prefix}/{fileName}";
@@ -44,7 +34,6 @@ public class S3StorageService : IStorageService
     {
         try
         {
-            using var s3Client = GetS3Client();
             Uri uri = new Uri(fileUrl);
             string key = uri.AbsolutePath.TrimStart('/');
 
@@ -54,7 +43,7 @@ public class S3StorageService : IStorageService
                 Key = key
             };
 
-            await s3Client.DeleteObjectAsync(deleteRequest);
+            await _s3Client.DeleteObjectAsync(deleteRequest);
             return true;
         }
         catch (Exception ex)
