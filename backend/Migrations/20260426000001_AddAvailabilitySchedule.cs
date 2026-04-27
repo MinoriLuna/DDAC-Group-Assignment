@@ -8,14 +8,6 @@ namespace backend.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // licensenumber was added to the model but never migrated
-            migrationBuilder.AddColumn<string>(
-                name: "licensenumber",
-                schema: "public",
-                table: "users",
-                type: "text",
-                nullable: true);
-
             migrationBuilder.AddColumn<string>(
                 name: "availabledays",
                 schema: "public",
@@ -40,7 +32,6 @@ namespace backend.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(name: "licensenumber", schema: "public", table: "users");
             migrationBuilder.DropColumn(name: "availabledays", schema: "public", table: "users");
             migrationBuilder.DropColumn(name: "availablefrom", schema: "public", table: "users");
             migrationBuilder.DropColumn(name: "availableto", schema: "public", table: "users");
