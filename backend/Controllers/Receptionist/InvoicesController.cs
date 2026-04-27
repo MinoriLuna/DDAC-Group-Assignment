@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
+using backend.Services.Interfaces;
+using backend.Services.AWS;
 
 namespace backend.Controllers;
 
@@ -10,7 +12,18 @@ namespace backend.Controllers;
 public class ReceptionistInvoicesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
-    public ReceptionistInvoicesController(ApplicationDbContext db) => _db = db;
+    private readonly INotificationService _notification;
+    private readonly EventBridgeService _eventBridge;
+
+    public ReceptionistInvoicesController(
+        ApplicationDbContext db,
+        INotificationService notification,
+        EventBridgeService eventBridge)
+    {
+        _db = db;
+        _notification = notification;
+        _eventBridge = eventBridge;
+    }
 
     // GET /api/receptionist/invoices
     [HttpGet]
@@ -92,6 +105,15 @@ public class ReceptionistInvoicesController : ControllerBase
 
             _db.Invoices.Add(invoice);
             await _db.SaveChangesAsync();
+
+            // EventBridge audit log
+            await _eventBridge.PublishAuditAsync("ReceptionistInvoiceCreated", new {
+                InvoiceId   = invoice.InvoiceId,
+                PatientId   = req.PatientId,
+                TotalAmount = invoice.TotalAmount,
+                Timestamp   = DateTime.UtcNow
+            });
+
             return Ok(new { message = "Invoice created.", invoiceId = invoice.InvoiceId });
         }
         catch (Exception ex)
@@ -163,6 +185,24 @@ public class ReceptionistInvoicesController : ControllerBase
         invoice.PaidAt        = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
+
+        var patient = await _db.Users.FindAsync(invoice.PatientId);
+
+        // EventBridge audit log
+        await _eventBridge.PublishAuditAsync("ReceptionistInvoicePaid", new {
+            InvoiceId     = id,
+            PatientId     = invoice.PatientId,
+            TotalAmount   = invoice.TotalAmount,
+            PaymentMethod = req.PaymentMethod,
+            Timestamp     = DateTime.UtcNow
+        });
+
+        // SNS notification
+        await _notification.SendNotificationAsync(
+            "Payment Received – Invoice Settled",
+            $"Dear {patient?.FullName ?? "Patient"}, your payment of RM {invoice.TotalAmount:F2} via {req.PaymentMethod} has been received. Your invoice is now fully settled. Thank you!"
+        );
+
         return Ok(new { message = "Payment recorded successfully." });
     }
 }

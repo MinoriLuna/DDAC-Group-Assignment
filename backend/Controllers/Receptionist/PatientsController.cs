@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
+using backend.Services.AWS;
 
 namespace backend.Controllers;
 
@@ -11,7 +12,13 @@ namespace backend.Controllers;
 public class ReceptionistPatientsController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
-    public ReceptionistPatientsController(ApplicationDbContext db) => _db = db;
+    private readonly EventBridgeService _eventBridge;
+
+    public ReceptionistPatientsController(ApplicationDbContext db, EventBridgeService eventBridge)
+    {
+        _db = db;
+        _eventBridge = eventBridge;
+    }
 
     // GET /api/receptionist/patients
     [HttpGet]
@@ -85,6 +92,15 @@ public class ReceptionistPatientsController : ControllerBase
 
         _db.Users.Add(patient);
         await _db.SaveChangesAsync();
+
+        // EventBridge audit log
+        await _eventBridge.PublishAuditAsync("ReceptionistPatientRegistered", new {
+            PatientId = patient.UserId,
+            FullName  = patient.FullName,
+            Email     = patient.Email,
+            Timestamp = DateTime.UtcNow
+        });
+
         return Ok(new { message = "Patient registered successfully.", patientId = patient.UserId });
     }
 
@@ -134,6 +150,14 @@ public class ReceptionistPatientsController : ControllerBase
             p.DateOfBirth = DateTime.SpecifyKind(dob, DateTimeKind.Utc);
 
         await _db.SaveChangesAsync();
+
+        // EventBridge audit log
+        await _eventBridge.PublishAuditAsync("ReceptionistPatientUpdated", new {
+            PatientId = id,
+            FullName  = p.FullName,
+            Timestamp = DateTime.UtcNow
+        });
+
         return Ok(new { message = "Patient updated successfully." });
     }
 }

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
+using backend.Services.Interfaces;
+using backend.Services.AWS;
 using System.Globalization;
 
 namespace backend.Controllers;
@@ -12,7 +14,18 @@ namespace backend.Controllers;
 public class ReceptionistAppointmentsController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
-    public ReceptionistAppointmentsController(ApplicationDbContext db) => _db = db;
+    private readonly INotificationService _notification;
+    private readonly EventBridgeService _eventBridge;
+
+    public ReceptionistAppointmentsController(
+        ApplicationDbContext db,
+        INotificationService notification,
+        EventBridgeService eventBridge)
+    {
+        _db = db;
+        _notification = notification;
+        _eventBridge = eventBridge;
+    }
 
     // GET /api/receptionist/appointments?date=2026-04-25
     [HttpGet]
@@ -79,6 +92,26 @@ public class ReceptionistAppointmentsController : ControllerBase
 
             _db.Appointments.Add(appt);
             await _db.SaveChangesAsync();
+
+            var patient = await _db.Users.FindAsync(req.PatientId);
+            var doctor  = await _db.Users.FindAsync(req.DoctorId);
+
+            // EventBridge audit log
+            await _eventBridge.PublishAuditAsync("ReceptionistAppointmentBooked", new {
+                AppointmentId = appt.AppointmentId,
+                PatientId     = req.PatientId,
+                DoctorId      = req.DoctorId,
+                Date          = apptDate,
+                Time          = apptTime,
+                Timestamp     = DateTime.UtcNow
+            });
+
+            // SNS notification to patient
+            await _notification.SendNotificationAsync(
+                "Appointment Booked by Receptionist",
+                $"Dear {patient?.FullName ?? "Patient"}, an appointment has been scheduled for you with Dr. {doctor?.FullName ?? "your doctor"} on {apptDate:MMM dd, yyyy} at {apptTime:hh:mm tt}. Reason: {req.Reason ?? "General Consultation"}."
+            );
+
             return Ok(new { message = "Appointment booked successfully.", appointmentId = appt.AppointmentId });
         }
         catch (Exception ex)
@@ -91,7 +124,9 @@ public class ReceptionistAppointmentsController : ControllerBase
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] ReceptionistUpdateStatusRequest req)
     {
-        var appt = await _db.Appointments.FindAsync(id);
+        var appt = await _db.Appointments
+            .Include(a => a.Patient)
+            .FirstOrDefaultAsync(a => a.AppointmentId == id);
         if (appt == null) return NotFound(new { message = "Appointment not found." });
 
         appt.Status = ParseStatus(req.Status);
@@ -100,6 +135,27 @@ public class ReceptionistAppointmentsController : ControllerBase
             appt.CheckInTime = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
+
+        // EventBridge audit log
+        await _eventBridge.PublishAuditAsync("ReceptionistAppointmentStatusUpdated", new {
+            AppointmentId = id,
+            NewStatus     = req.Status,
+            Timestamp     = DateTime.UtcNow
+        });
+
+        // SNS for meaningful status changes only
+        if (appt.Status == AppointmentStatus.Confirmed || appt.Status == AppointmentStatus.Cancelled)
+        {
+            var statusMsg = appt.Status == AppointmentStatus.Confirmed
+                ? $"Your appointment on {appt.AppointmentDate:MMM dd, yyyy} at {appt.AppointmentTime:hh:mm tt} has been confirmed."
+                : $"Your appointment on {appt.AppointmentDate:MMM dd, yyyy} at {appt.AppointmentTime:hh:mm tt} has been cancelled by the receptionist.";
+
+            await _notification.SendNotificationAsync(
+                $"Appointment {req.Status}",
+                $"Dear {appt.Patient?.FullName ?? "Patient"}, {statusMsg}"
+            );
+        }
+
         return Ok(new { message = "Status updated." });
     }
 
@@ -142,6 +198,22 @@ public class ReceptionistAppointmentsController : ControllerBase
         _db.Invoices.Add(invoice);
         await _db.SaveChangesAsync();
 
+        var patient = await _db.Users.FindAsync(appt.PatientId);
+
+        // EventBridge audit log
+        await _eventBridge.PublishAuditAsync("ReceptionistAppointmentCompleted", new {
+            AppointmentId = id,
+            InvoiceId     = invoice.InvoiceId,
+            PatientId     = appt.PatientId,
+            Timestamp     = DateTime.UtcNow
+        });
+
+        // SNS notification
+        await _notification.SendNotificationAsync(
+            "Appointment Completed – Invoice Pending",
+            $"Dear {patient?.FullName ?? "Patient"}, your appointment on {appt.AppointmentDate:MMM dd, yyyy} has been completed. An invoice has been generated and is pending payment. Please proceed to the counter."
+        );
+
         return Ok(new { message = "Appointment completed and billing record created.", invoiceId = invoice.InvoiceId });
     }
 
@@ -160,6 +232,23 @@ public class ReceptionistAppointmentsController : ControllerBase
 
         appt.Status = AppointmentStatus.Scheduled;
         await _db.SaveChangesAsync();
+
+        var patient = await _db.Users.FindAsync(appt.PatientId);
+
+        // EventBridge audit log
+        await _eventBridge.PublishAuditAsync("ReceptionistAppointmentRescheduled", new {
+            AppointmentId = id,
+            NewDate       = appt.AppointmentDate,
+            NewTime       = appt.AppointmentTime,
+            Timestamp     = DateTime.UtcNow
+        });
+
+        // SNS notification
+        await _notification.SendNotificationAsync(
+            "Appointment Rescheduled",
+            $"Dear {patient?.FullName ?? "Patient"}, your appointment has been rescheduled to {appt.AppointmentDate:MMM dd, yyyy} at {appt.AppointmentTime:hh:mm tt}."
+        );
+
         return Ok(new { message = "Appointment rescheduled." });
     }
 
