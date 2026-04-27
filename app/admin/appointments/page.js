@@ -26,7 +26,7 @@ export default function AdminAppointmentsPage() {
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/admin/appointments', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/appointments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -46,7 +46,7 @@ export default function AdminAppointmentsPage() {
     setUpdating(id);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5230/api/admin/appointments/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/admin/appointments/${id}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

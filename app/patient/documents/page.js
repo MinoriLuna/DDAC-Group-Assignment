@@ -18,7 +18,7 @@ export default function DocumentVault() {
         return;
       }
 
-      const res = await fetch('http://localhost:5230/api/documents/mine', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/documents/mine`, {
         method: 'GET',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -65,7 +65,7 @@ export default function DocumentVault() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/documents/upload', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/documents/upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData, 
@@ -96,7 +96,7 @@ export default function DocumentVault() {
     const token = localStorage.getItem('token');
     
     // 2. Call your new C# Delete Endpoint
-    const res = await fetch(`http://localhost:5230/api/documents/delete/${documentId}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/documents/delete/${documentId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`

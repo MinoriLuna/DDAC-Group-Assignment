@@ -11,7 +11,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch('http://localhost:5230/api/profile/profile', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/profile/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -28,7 +28,7 @@ export default function ProfilePage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:5230/api/profile/update', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/profile/update`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(editData)

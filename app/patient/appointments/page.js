@@ -11,7 +11,7 @@ export default function AppointmentsPage() {
     const fetchAppointments = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch('http://localhost:5230/api/appointment/mine', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/mine`, {
           headers: { 'Authorization': `Bearer ${token}` } // Ensure token is sent for authentication
         });
         
@@ -35,7 +35,7 @@ const handleCancel = async (id) => {
 
   try {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5230/api/appointment/${id}/cancel`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/${id}/cancel`, {
       method: 'PATCH', // Matches our backend attribute
       headers: {
         'Authorization': `Bearer ${token}`,

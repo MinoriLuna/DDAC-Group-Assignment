@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Procfile">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AWSSDK.Comprehend" Version="4.0.2.26" />
     <PackageReference Include="AWSSDK.EventBridge" Version="4.0.5.26" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.33" />
@@ -24,5 +30,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
+
+
 
 </Project>

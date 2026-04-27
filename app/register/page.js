@@ -14,7 +14,7 @@ export default function RegisterPage() {
       e.preventDefault();
       
       // We use fetch to send our JSON data to the C# URL
-      const response = await fetch('http://localhost:5230/api/auth/register', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
