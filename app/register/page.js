@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ export default function RegisterPage() {
     password: '',
     role: 'Patient' // Default role
   });
+  const { showNotification } = useNotification();
 
   const handleSubmit = async (e) => {
       e.preventDefault();
@@ -21,7 +23,8 @@ export default function RegisterPage() {
       });
 
       const data = await response.json();
-      alert(data.message); // This will show the message sent from C#!
+      const type = response.ok ? 'success' : 'error';
+      showNotification(data.message, type);
     };
 
   return (

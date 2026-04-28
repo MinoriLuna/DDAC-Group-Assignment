@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { StarIcon } from '@heroicons/react/24/solid';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function RateDoctorPage() {
   const [doctors, setDoctors] = useState([]);
@@ -8,6 +9,7 @@ export default function RateDoctorPage() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const { showNotification } = useNotification();
 
   // 1. Fetch doctor list from your C# backend
   useEffect(() => {
@@ -28,7 +30,7 @@ export default function RateDoctorPage() {
   // 2. Submit review logic
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedDoctor) return alert("Pick a doctor first!");
+    if (!selectedDoctor) return showNotification("Pick a doctor first!", "warning");
 
     setLoading(true);
     const token = localStorage.getItem('token');
@@ -48,13 +50,13 @@ export default function RateDoctorPage() {
       });
 
       if (res.ok) {
-        alert("Review saved and logged to CloudWatch!");
+        showNotification("Review saved and logged to CloudWatch!", "success");
         setComment("");
         setRating(5);
         setSelectedDoctor("");
       }
     } catch (err) {
-      alert("Server connection failed.");
+      showNotification("Server connection failed.", "error");
     } finally {
       setLoading(false);
     }

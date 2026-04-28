@@ -1,13 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function AdminPatientsPage() {
   const [patients, setPatients]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [search, setSearch]       = useState('');
-  const [selected, setSelected]   = useState(null); // patient detail modal
+  const [selected, setSelected]   = useState(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -18,18 +20,23 @@ export default function AdminPatientsPage() {
         });
         if (res.ok) {
           setPatients(await res.json());
+          setError(null);
         } else {
           const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-          setError(err.message || `HTTP ${res.status}`);
+          const errMsg = err.message || `HTTP ${res.status}`;
+          setError(errMsg);
+          showNotification(`Failed to load patients: ${errMsg}`, "error");
         }
-      } catch {
-        setError('Backend is offline. Run dotnet run in the backend/ folder.');
+      } catch (err) {
+        const errMsg = 'Backend is offline. Run dotnet run in the backend/ folder.';
+        setError(errMsg);
+        showNotification(errMsg, "error");
       } finally {
         setLoading(false);
       }
     };
     fetchPatients();
-  }, []);
+  }, [showNotification]);
 
   const filtered = patients.filter(p =>
     p.fullName?.toLowerCase().includes(search.toLowerCase()) ||

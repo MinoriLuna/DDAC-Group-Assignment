@@ -6,6 +6,7 @@ namespace backend.Models;
 public enum AppointmentStatus
 {
     Pending,
+    Scheduled,
     Confirmed,
     Completed,
     Cancelled,

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNotification } from '@/hooks/useNotification';
 
 const ROLE_STYLES = {
   Patient: 'bg-blue-50 text-blue-700',
@@ -16,6 +17,7 @@ export default function AdminUsersPage() {
   const [selected, setSelected] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -26,18 +28,23 @@ export default function AdminUsersPage() {
         });
         if (res.ok) {
           setUsers(await res.json());
+          setError(null);
         } else {
           const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-          setError(err.message || `HTTP ${res.status}`);
+          const errMsg = err.message || `HTTP ${res.status}`;
+          setError(errMsg);
+          showNotification(`Failed to load users: ${errMsg}`, "error");
         }
-      } catch {
-        setError('Backend is offline. Run dotnet run in the backend/ folder.');
+      } catch (err) {
+        const errMsg = 'Backend is offline. Run dotnet run in the backend/ folder.';
+        setError(errMsg);
+        showNotification(errMsg, "error");
       } finally {
         setLoading(false);
       }
     };
     fetchUsers();
-  }, []);
+  }, [showNotification]);
 
   const deleteUser = async (id) => {
     setDeleting(id);
@@ -51,7 +58,14 @@ export default function AdminUsersPage() {
       if (res.ok) {
         setUsers(prev => prev.filter(u => u.userId !== id));
         if (selected?.userId === id) setSelected(null);
+        showNotification('User deleted successfully!', 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showNotification(`Failed to delete user: ${err.message || 'Unknown error'}`, 'error');
       }
+    } catch (err) {
+      console.error('Delete error:', err);
+      showNotification('Connection error. Could not delete user.', 'error');
     } finally {
       setDeleting(null);
     }

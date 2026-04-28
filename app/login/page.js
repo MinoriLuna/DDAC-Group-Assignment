@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const router = useRouter();
+  const { showNotification } = useNotification();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ export default function LoginPage() {
       // Error check
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Server error" }));
-        alert(errorData.message || "Invalid credentials");
+        showNotification(errorData.message || "Invalid credentials", "error");
         return;
       }
       const data = await response.json();
@@ -47,7 +49,7 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error("Fetch failed:", err);
-      alert("Backend is offline. Run 'dotnet run' in your backend folder!");
+      showNotification("Backend is offline. Run 'dotnet run' in your backend folder!", "error");
     }
   };
 

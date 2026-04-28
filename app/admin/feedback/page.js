@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 
 const SENTIMENT_CONFIG = {
   POSITIVE:  { label: 'Positive',  bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500' },
@@ -33,6 +34,7 @@ export default function AdminFeedbackPage() {
   const [filter, setFilter]     = useState('ALL');
   const [search, setSearch]     = useState('');
   const [deleting, setDeleting] = useState(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -43,18 +45,23 @@ export default function AdminFeedbackPage() {
         });
         if (res.ok) {
           setReviews(await res.json());
+          setError(null);
         } else {
           const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-          setError(err.message || `HTTP ${res.status}`);
+          const errMsg = err.message || `HTTP ${res.status}`;
+          setError(errMsg);
+          showNotification(`Failed to load feedback: ${errMsg}`, "error");
         }
-      } catch {
-        setError('Backend is offline. Run dotnet run in the backend/ folder.');
+      } catch (err) {
+        const errMsg = 'Backend is offline. Run dotnet run in the backend/ folder.';
+        setError(errMsg);
+        showNotification(errMsg, "error");
       } finally {
         setLoading(false);
       }
     };
     fetchFeedback();
-  }, []);
+  }, [showNotification]);
 
   const deleteReview = async (id) => {
     setDeleting(id);
@@ -64,7 +71,16 @@ export default function AdminFeedbackPage() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) setReviews(prev => prev.filter(r => r.id !== id));
+      if (res.ok) {
+        setReviews(prev => prev.filter(r => r.id !== id));
+        showNotification('Review deleted successfully!', 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showNotification(`Failed to delete review: ${err.message || 'Unknown error'}`, 'error');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      showNotification('Connection error. Could not delete review.', 'error');
     } finally {
       setDeleting(null);
     }

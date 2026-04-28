@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 
-const STATUSES = ['All', 'Pending', 'Confirmed', 'CheckedIn', 'InConsultation', 'Completed', 'Cancelled'];
+const STATUSES = ['All', 'Pending', 'Scheduled', 'Confirmed', 'CheckedIn', 'InConsultation', 'Completed', 'Cancelled'];
 
 const STATUS_STYLES = {
   Pending:       'bg-yellow-100 text-yellow-700',
+  Scheduled:     'bg-blue-100 text-blue-700',
   Confirmed:     'bg-blue-100 text-blue-700',
   CheckedIn:     'bg-cyan-100 text-cyan-700',
   InConsultation:'bg-purple-100 text-purple-700',
@@ -17,7 +19,8 @@ export default function AdminAppointmentsPage() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [filter, setFilter]             = useState('All');
-  const [updating, setUpdating]         = useState(null); // appointmentId being updated
+  const [updating, setUpdating]         = useState(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     fetchAppointments();
@@ -31,12 +34,17 @@ export default function AdminAppointmentsPage() {
       });
       if (res.ok) {
         setAppointments(await res.json());
+        setError(null);
       } else {
         const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-        setError(err.message || `HTTP ${res.status}`);
+        const errMsg = err.message || `HTTP ${res.status}`;
+        setError(errMsg);
+        showNotification(`Failed to load appointments: ${errMsg}`, "error");
       }
     } catch (err) {
-      setError('Backend is offline. Run dotnet run in the backend/ folder.');
+      const errMsg = 'Backend is offline. Run dotnet run in the backend/ folder.';
+      setError(errMsg);
+      showNotification(errMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -58,9 +66,14 @@ export default function AdminAppointmentsPage() {
         setAppointments(prev =>
           prev.map(a => a.appointmentId === id ? { ...a, status: newStatus } : a)
         );
+        showNotification('Appointment status updated!', 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showNotification(`Failed to update: ${err.message || 'Unknown error'}`, 'error');
       }
     } catch (err) {
       console.error('Failed to update status:', err);
+      showNotification('Connection error. Could not update appointment.', 'error');
     } finally {
       setUpdating(null);
     }
