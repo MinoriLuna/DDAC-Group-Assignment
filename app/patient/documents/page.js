@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useNotification } from '@/hooks/useNotification';
+import { useConfirmation } from '@/hooks/useConfirmation';
 
 export default function DocumentVault() {
   const [documents, setDocuments] = useState([]);
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const { showNotification } = useNotification();
+  const { showConfirmation } = useConfirmation();
 
   // 1. Fetch real documents from Supabase via your C# Backend
   const fetchDocs = async () => {
@@ -57,7 +61,7 @@ export default function DocumentVault() {
 
   // 3. Upload Logic
   const handleUpload = async () => {
-    if (!file) return alert("Please select a file.");
+    if (!file) return showNotification("Please select a file.", "error");
     
     setIsUploading(true);
     const formData = new FormData();
@@ -74,49 +78,45 @@ export default function DocumentVault() {
       if (res.ok) {
         setFile(null);
         await fetchDocs(); // Refresh list from database
-        alert("File vaulted successfully!");
+        showNotification("File vaulted successfully!", "success");
       } else {
         const errData = await res.text();
-        alert(`Upload failed: ${errData}`);
+        showNotification(`Upload failed: ${errData}`, "error");
       }
     } catch (error) {
-      alert("Connection error to backend.");
+      showNotification("Connection error to backend.", "error");
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleDeleteDocument = async (documentId) => {
-  // 1. Safety Check (Crucial for medical records)
-  if (!window.confirm("Are you sure you want to permanently delete this document from the vault? This cannot be undone.")) {
-    return;
-  }
+  showConfirmation(
+    "Are you sure you want to permanently delete this document from the vault? This cannot be undone.",
+    async () => {
+      try {
+        const token = localStorage.getItem('token');
 
-  try {
-    const token = localStorage.getItem('token');
-    
-    // 2. Call your new C# Delete Endpoint
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/documents/delete/${documentId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/documents/delete/${documentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          showNotification("Document permanently deleted from AWS S3 and Database!", "success");
+          setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== documentId));
+        } else {
+          const errorText = await res.text();
+          showNotification(`Failed to delete: ${errorText}`, "error");
+        }
+      } catch (err) {
+        console.error("Delete error:", err);
+        showNotification("Could not connect to the server.", "error");
       }
-    });
-
-    if (res.ok) {
-      alert("Document permanently deleted from AWS S3 and Database!");
-      
-      // 3. Update the UI instantly without needing to refresh the page
-      // (This assumes your state variable is called 'documents')
-      setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== documentId));
-    } else {
-      const errorText = await res.text();
-      alert(`Failed to delete: ${errorText}`);
     }
-  } catch (err) {
-    console.error("Delete error:", err);
-    alert("Could not connect to the server.");
-  }
+  );
 };
 
   return (

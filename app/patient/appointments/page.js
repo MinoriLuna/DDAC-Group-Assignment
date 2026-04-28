@@ -1,10 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { APPOINTMENT_STATUS } from '@/utils/constants';
+import { useNotification } from '@/hooks/useNotification';
+import { useConfirmation } from '@/hooks/useConfirmation';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showNotification } = useNotification();
+  const { showConfirmation } = useConfirmation();
+  const [cancelPending, setCancelPending] = useState(null);
 
   // --- 1. FETCH APPOINTMENTS ON LOAD ---
   useEffect(() => {
@@ -30,35 +35,40 @@ export default function AppointmentsPage() {
   }, []);
 
 // Cancel Appointment
-const handleCancel = async (id) => {
-  if (!confirm("Are you sure you want to cancel this appointment?")) return;
+const handleCancel = (id) => {
+  showConfirmation(
+    "Are you sure you want to cancel this appointment?",
+    async () => {
+      setCancelPending(id);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/${id}/cancel`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/${id}/cancel`, {
-      method: 'PATCH', // Matches our backend attribute
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        if (res.ok) {
+          setAppointments(appointments.map(appt =>
+            appt.appointmentId === id
+              ? { ...appt, status: APPOINTMENT_STATUS.CANCELLED }
+              : appt
+          ));
+          showNotification("Appointment cancelled successfully.", "success");
+        } else {
+          const errorData = await res.json();
+          showNotification(`Error: ${errorData.message}`, "error");
+        }
+      } catch (error) {
+        console.error("Cancel failed:", error);
+        showNotification("Could not connect to the server.", "error");
+      } finally {
+        setCancelPending(null);
       }
-    });
-
-    if (res.ok) {
-      // Update UI only if the database update worked
-      setAppointments(appointments.map(appt => 
-        appt.appointmentId === id 
-          ? { ...appt, status: APPOINTMENT_STATUS.CANCELLED } 
-          : appt
-      ));
-      alert("Appointment cancelled successfully.");
-    } else {
-      const errorData = await res.json();
-      alert(`Error: ${errorData.message}`);
     }
-  } catch (error) {
-    console.error("Cancel failed:", error);
-    alert("Could not connect to the server.");
-  }
+  );
 };
 
   if (loading) return <div className="p-10 font-black text-gray-400 animate-pulse text-center">Loading Appointments...</div>;
@@ -122,11 +132,12 @@ const handleCancel = async (id) => {
                   <span className="bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
                     {appt.status}
                   </span>
-                  <button 
+                  <button
                     onClick={() => handleCancel(appt.appointmentId)}
-                    className="border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+                    disabled={cancelPending === appt.appointmentId}
+                    className="border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Cancel Visit
+                    {cancelPending === appt.appointmentId ? 'Cancelling...' : 'Cancel Visit'}
                   </button>
                 </div>
               </div>

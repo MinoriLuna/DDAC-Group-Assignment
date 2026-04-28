@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({ fullName: '', email: '', role: '', phone: '', address: '', createdAt: '' });
   const [editData, setEditData] = useState({ fullName: '', email: '', phone: '', address: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,7 +38,7 @@ export default function ProfilePage() {
       if (res.ok) {
         setProfile({ ...profile, ...editData });
         setIsEditing(false);
-        alert("Saved!");
+        showNotification("Profile saved!", "success");
       }
     } catch (err) { console.error(err); }
   };

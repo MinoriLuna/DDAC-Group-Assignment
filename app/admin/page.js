@@ -1,9 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -15,20 +18,28 @@ export default function AdminDashboard() {
         if (res.ok) {
           const data = await res.json();
           setStats(data);
+          setError(null);
+        } else {
+          const errMsg = await res.text();
+          setError(errMsg || `Failed with status ${res.status}`);
+          showNotification(`Failed to load stats: ${errMsg}`, "error");
         }
       } catch (err) {
         console.error('Failed to fetch admin stats:', err);
+        setError(err.message);
+        showNotification(`Backend connection error: ${err.message}`, "error");
       } finally {
         setLoading(false);
       }
     };
     fetchStats();
-  }, []);
+  }, [showNotification]);
 
   if (loading) return <div className="text-red-600 font-bold">Loading dashboard...</div>;
   if (!stats) return (
     <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-sm text-red-700">
       <p className="font-bold mb-1">Failed to load dashboard stats.</p>
+      <p className="mb-3">Error: {error || 'Unknown error'}</p>
       <p>Make sure the backend is running: <code className="bg-red-100 px-1 rounded">dotnet run</code> inside the <code className="bg-red-100 px-1 rounded">backend/</code> folder.</p>
     </div>
   );
@@ -123,6 +134,7 @@ function StatCard({ label, value, highlight }) {
 function StatusBadge({ status }) {
   const styles = {
     Pending:        'bg-yellow-100 text-yellow-700',
+    Scheduled:      'bg-blue-100 text-blue-700',
     Confirmed:      'bg-blue-100 text-blue-700',
     InConsultation: 'bg-purple-100 text-purple-700',
     Completed:      'bg-green-100 text-green-700',

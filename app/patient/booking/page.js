@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function BookingPage() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   
   // 1. STATE MANAGEMENT
   const [doctors, setDoctors] = useState([]);
@@ -66,7 +68,7 @@ export default function BookingPage() {
       });
 
       if (res.ok) {
-        alert("Booking Confirmed! Redirecting...");
+        showNotification("Booking Confirmed! Redirecting...", "success");
         router.push('/patient/appointments'); 
       } else {
         const errorText = await res.text(); 
@@ -80,11 +82,11 @@ export default function BookingPage() {
         }
         
         console.error("Backend Error Details:", errorMessage);
-        alert(`Booking Failed (Status ${res.status}): ${errorMessage}`);
+        showNotification(`Booking Failed (Status ${res.status}): ${errorMessage}`, "error");
       }
     } catch (err) {
       console.error("Booking error:", err);
-      alert("Network error. Could not reach the server.");
+      showNotification("Network error. Could not reach the server.", "error");
     } finally {
       setIsSubmitting(false);
     }
