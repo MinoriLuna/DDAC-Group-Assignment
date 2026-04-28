@@ -15,10 +15,10 @@ export default function AuthGuard({ children }) {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
 
-    // If no token, redirect to login (unless already on public page)
+    // If no token, redirect to home (unless already on public page)
     if (!token || !userStr) {
       if (!isPublicPage) {
-        router.push('/login');
+        router.push('/');
       }
       return;
     }
@@ -45,7 +45,7 @@ export default function AuthGuard({ children }) {
     } catch (err) {
       console.error('Failed to parse user:', err);
       if (!isPublicPage) {
-        router.push('/login');
+        router.push('/');
       }
     }
   }, [pathname, isPublicPage, router]);

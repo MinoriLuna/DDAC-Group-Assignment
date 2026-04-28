@@ -6,8 +6,18 @@ import Link from 'next/link';
 export default function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('Patient');
 
-  // 1. Fetch live data from your existing endpoint
+  // Get user name from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserName(user.fullName || 'Patient');
+    }
+  }, []);
+
+  // Fetch appointments
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -28,36 +38,38 @@ export default function PatientDashboard() {
     fetchAppointments();
   }, []);
 
-  // 2. Logic to find the "Next" appointment (Closest Pending one)
+  // Get next appointment
   const nextAppt = appointments
     .filter(a => a.status === 'Pending')
     .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate))[0];
 
-  // 3. Logic for the Quick Stats
+  // Get stats
   const stats = {
     pending: appointments.filter(a => a.status === 'Pending').length,
     completed: appointments.filter(a => a.status === 'Completed').length,
     cancelled: appointments.filter(a => a.status === 'Cancelled').length,
   };
 
-  if (loading) return <div className="p-10 text-red-600 font-bold">Loading your health journey...</div>;
+  if (loading) return <div className="p-10 text-center"><div className="inline-block animate-pulse text-gray-500 font-bold">Loading your dashboard...</div></div>;
 
   return (
-    <div className="p-10 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* HEADER */}
-      <header className="mb-10 flex justify-between items-center">
-        <div>
-          <h2 className="text-4xl font-bold text-gray-800 tracking-tight">Welcome back, Ashton</h2>
-          <p className="text-gray-500 mt-1">Here is a summary of your health journey.</p>
+      <header className="mb-10 flex justify-between items-center flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
+            Welcome back, <span className="bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">{userName}</span>
+          </h2>
+          <p className="text-gray-600 text-lg">Here's your health dashboard at a glance</p>
         </div>
         <Link href="/patient/booking">
-          <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold shadow-sm transition-all active:scale-95">
-            + Book Appointment
+          <button className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95 transform whitespace-nowrap">
+            📅 Book Appointment
           </button>
         </Link>
       </header>
 
-      {/* DASHBOARD GRID*/}
+      {/* STATS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* LEFT COLUMN */}
