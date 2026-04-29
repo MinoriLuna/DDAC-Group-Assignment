@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useNotification } from '@/hooks/useNotification';
 
 export default function RegisterPage() {
@@ -10,21 +11,33 @@ export default function RegisterPage() {
     password: '',
     role: 'Patient' // Default role
   });
+  const router = useRouter();
   const { showNotification } = useNotification();
 
   const handleSubmit = async (e) => {
       e.preventDefault();
-      
-      // We use fetch to send our JSON data to the C# URL
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
 
-      const data = await response.json();
-      const type = response.ok ? 'success' : 'error';
-      showNotification(data.message, type);
+      try {
+        // We use fetch to send our JSON data to the C# URL
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showNotification(data.message, 'success');
+          // Redirect to login after successful registration
+          setTimeout(() => router.push('/login'), 1500);
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (err) {
+        console.error("Fetch failed:", err);
+        showNotification("Backend is offline. Run 'dotnet run' in your backend folder!", "error");
+      }
     };
 
   return (

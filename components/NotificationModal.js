@@ -48,24 +48,21 @@ export default function NotificationModal() {
   const styles = typeStyles[notification.type] || typeStyles.info;
 
   return (
-    <>
-      {isVisible && (
-        <div className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300" onClick={hideNotification} />
-      )}
+    <div className="fixed inset-0 pointer-events-none z-50">
       <div
-        className={`fixed top-4 right-4 max-w-sm w-full z-50 transition-all duration-300 transform ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+        className={`fixed top-4 right-4 max-w-sm w-full pointer-events-auto transition-all duration-300 transform ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
         }`}
       >
-        <div className={`${styles.bg} ${styles.border} border rounded-lg shadow-lg p-4 flex items-start gap-3`}>
-          <div className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full ${styles.icon} flex items-center justify-center text-white`}>
+        <div className={`${styles.bg} ${styles.border} border rounded-lg shadow-2xl p-4 flex items-start gap-3`}>
+          <div className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full ${styles.icon} flex items-center justify-center text-white font-bold`}>
             {notification.type === 'success' && '✓'}
             {notification.type === 'error' && '!'}
             {notification.type === 'warning' && '⚠'}
             {notification.type === 'info' && 'ℹ'}
           </div>
           <div className="flex-1">
-            <p className={`${styles.text} font-medium text-sm`}>{notification.message}</p>
+            <p className={`${styles.text} font-medium`}>{notification.message}</p>
           </div>
           <button
             onClick={hideNotification}
@@ -75,6 +72,6 @@ export default function NotificationModal() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -37,4 +37,24 @@ public class SnsNotificationService : INotificationService
         // Use the injected client
         await _snsClient.PublishAsync(request);
     }
+
+    public async Task<string> SubscribeEmailAsync(string email)
+    {
+        var topicArn = _config["AWS:SnsTopicArn"];
+
+        if (string.IsNullOrEmpty(topicArn))
+        {
+            throw new Exception("SNS Topic ARN is missing from configuration.");
+        }
+
+        var request = new SubscribeRequest
+        {
+            TopicArn = topicArn,
+            Protocol = "email",
+            Endpoint = email
+        };
+
+        var response = await _snsClient.SubscribeAsync(request);
+        return response.SubscriptionArn;
+    }
 }

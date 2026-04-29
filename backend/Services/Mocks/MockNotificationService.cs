@@ -12,7 +12,18 @@ public class MockNotificationService : INotificationService
         Console.WriteLine($"Subject: {subject}");
         Console.WriteLine($"Message: {message}");
         Console.WriteLine("------------------------------------------");
-        
+
         return Task.CompletedTask;
+    }
+
+    public Task<string> SubscribeEmailAsync(string email)
+    {
+        Console.WriteLine("------------------------------------------");
+        Console.WriteLine("[MOCK SNS EMAIL SUBSCRIPTION]");
+        Console.WriteLine($"Email: {email}");
+        Console.WriteLine("------------------------------------------");
+
+        // Return a mock subscription ARN
+        return Task.FromResult($"arn:aws:sns:us-east-1:000000000000:MediCareAlerts:mock-{Guid.NewGuid()}");
     }
 }
