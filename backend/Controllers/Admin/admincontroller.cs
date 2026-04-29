@@ -128,7 +128,15 @@ public class AdminController : ControllerBase
                       $"Reason: {appointment.Reason ?? "N/A"}\n\n" +
                       "Please contact the clinic to reschedule.\n\nThank you,\nMediCare+ Clinic";
 
-                await _notification.SendNotificationAsync(subject, message);
+                try
+                {
+                    await _notification.SendNotificationAsync(subject, message);
+                    Console.WriteLine("SNS notification sent successfully.");
+                }
+                catch (Exception snsEx)
+                {
+                    Console.WriteLine($"SNS notification failed: {snsEx.Message}");
+                }
             }
 
             return Ok(new { message = "Status updated.", status = newStatus.ToString() });
@@ -136,6 +144,71 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Failed to update status", details = ex.Message });
+        }
+    }
+
+    // PUT: api/admin/appointments/{id}
+    [HttpPut("appointments/{id}")]
+    public async Task<IActionResult> UpdateAppointment(Guid id, [FromBody] UpdateAppointmentRequest request)
+    {
+        try
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found." });
+
+            var changes = new List<string>();
+
+            if (request.AppointmentDate.HasValue && request.AppointmentDate.Value != appointment.AppointmentDate)
+            {
+                changes.Add($"Date changed to {request.AppointmentDate.Value:yyyy-MM-dd}");
+                appointment.AppointmentDate = request.AppointmentDate.Value;
+            }
+
+            if (request.AppointmentTime.HasValue && request.AppointmentTime.Value != appointment.AppointmentTime)
+            {
+                changes.Add($"Time changed to {request.AppointmentTime.Value:HH:mm}");
+                appointment.AppointmentTime = request.AppointmentTime.Value;
+            }
+
+            if (request.DoctorId.HasValue && request.DoctorId.Value != appointment.DoctorId)
+            {
+                var newDoctor = await _context.Users.FindAsync(request.DoctorId.Value);
+                if (newDoctor == null || newDoctor.Role != "Doctor")
+                    return BadRequest(new { message = "Invalid doctor ID." });
+                changes.Add($"Doctor changed to Dr. {newDoctor.FullName}");
+                appointment.DoctorId = request.DoctorId.Value;
+            }
+
+            if (request.Reason != null && request.Reason != appointment.Reason)
+            {
+                changes.Add($"Reason updated to: {request.Reason}");
+                appointment.Reason = request.Reason;
+            }
+
+            if (changes.Count == 0)
+                return Ok(new { message = "No changes detected." });
+
+            await _context.SaveChangesAsync();
+
+            // Run Comprehend sentiment analysis on the reason text
+            string sentiment = "NEUTRAL";
+            var reasonText = appointment.Reason;
+            if (!string.IsNullOrWhiteSpace(reasonText))
+            {
+                try { sentiment = await _comprehend.DetectSentimentAsync(reasonText); }
+                catch { sentiment = "NEUTRAL"; }
+            }
+
+            return Ok(new
+            {
+                message = "Appointment updated.",
+                reasonSentiment = sentiment
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to update appointment", details = ex.Message });
         }
     }
 
@@ -258,8 +331,9 @@ public class AdminController : ControllerBase
                         ? "NEUTRAL"
                         : await _comprehend.DetectSentimentAsync(r.comment);
                 }
-                catch
+                catch (Exception comprehendEx)
                 {
+                    Console.WriteLine($"Comprehend error: {comprehendEx.Message}");
                     sentiment = "NEUTRAL";
                 }
 
@@ -308,4 +382,12 @@ public class AdminController : ControllerBase
 public class UpdateStatusRequest
 {
     public string Status { get; set; } = string.Empty;
+}
+
+public class UpdateAppointmentRequest
+{
+    public DateOnly? AppointmentDate { get; set; }
+    public TimeOnly? AppointmentTime { get; set; }
+    public Guid? DoctorId { get; set; }
+    public string? Reason { get; set; }
 }

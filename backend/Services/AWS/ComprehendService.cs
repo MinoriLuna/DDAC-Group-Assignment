@@ -7,7 +7,6 @@ public class ComprehendService
 {
     private readonly IAmazonComprehend _comprehendClient;
 
-    // Inject the client directly - NO manual credentials or SessionAWSCredentials!
     public ComprehendService(IAmazonComprehend comprehendClient)
     {
         _comprehendClient = comprehendClient;
@@ -17,7 +16,6 @@ public class ComprehendService
     {
         if (string.IsNullOrWhiteSpace(text)) return "NEUTRAL";
 
-        // Use the injected client provided by the LabInstanceProfile
         var response = await _comprehendClient.DetectSentimentAsync(new DetectSentimentRequest
         {
             Text = text,

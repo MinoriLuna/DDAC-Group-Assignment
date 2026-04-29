@@ -1,28 +1,46 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Services.Interfaces;
-using backend.Services.Mocks; 
-using backend.Services.AWS; 
+using backend.Services.Mocks;
+using backend.Services.AWS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Amazon.S3; // Added
-using Amazon.SimpleNotificationService; // Added
-using Amazon.Comprehend; // Added
-using Amazon.EventBridge; // Added
+using Amazon.S3;
+using Amazon.SimpleNotificationService;
+using Amazon.Comprehend;
+using Amazon.EventBridge;
+using Amazon.Runtime;
+using Amazon.XRay.Recorder.Core;
+using Amazon.XRay.Recorder.Handlers.AwsSdk;
+using Amazon.XRay.Recorder.Handlers.AspNetCore;
+
+// Trace all AWS SDK calls (S3, SNS, Comprehend) with X-Ray
+AWSSDKHandler.RegisterXRayForAllServices();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. AWS SDK REGISTRY (The "Keyless" Entry) ---
-// This tells the app to look for the LabInstanceProfile automatically
+// CloudWatch logging
+builder.Logging.AddAWSProvider();
+
+// --- 1. AWS SDK REGISTRY ---
 var awsOptions = builder.Configuration.GetAWSOptions();
 builder.Services.AddDefaultAWSOptions(awsOptions);
 
-// Register the actual AWS Clients so they can be injected into your services
 builder.Services.AddAWSService<IAmazonEventBridge>();
 builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddAWSService<IAmazonSimpleNotificationService>();
-builder.Services.AddAWSService<IAmazonComprehend>();
+
+// Comprehend uses a separate personal account key (lab role lacks permission)
+builder.Services.AddSingleton<IAmazonComprehend>(_ =>
+{
+    var config = builder.Configuration;
+    var credentials = new BasicAWSCredentials(
+        config["AWS:ComprehendAccessKey"],
+        config["AWS:ComprehendSecretKey"]
+    );
+    return new AmazonComprehendClient(credentials, Amazon.RegionEndpoint.USEast1);
+});
 
 // --- 2. DATABASE REGISTRY ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -35,7 +53,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
     {
-        policy.WithOrigins(allowedOrigins) 
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -59,13 +77,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
-.AddJsonOptions(options => 
+.AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
 // --- 5. CUSTOM SERVICES REGISTRY ---
-// These now depend on the AWS Clients registered in Step 1
 builder.Services.AddScoped<IStorageService, S3StorageService>();
 builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
@@ -75,6 +92,8 @@ builder.Services.AddScoped<ComprehendService>();
 var app = builder.Build();
 
 app.UseCors("AllowNextJs");
+
+app.UseXRay("MediCare+");
 
 // Serve Next.js static export from wwwroot
 app.UseDefaultFiles();
