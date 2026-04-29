@@ -47,7 +47,16 @@ export default function DocumentVault() {
 
   // 2. File Selection Handlers
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        showNotification('File is too large (max 50MB)', 'error');
+        return;
+      }
+      setFile(file);
+      showNotification(`File selected: ${file.name}`, 'success');
+    }
   };
 
   const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
@@ -61,7 +70,7 @@ export default function DocumentVault() {
 
   // 3. Upload Logic
   const handleUpload = async () => {
-    if (!file) return showNotification("Please select a file.", "error");
+    if (!file) return showNotification("Please select a file first", "warning");
     
     setIsUploading(true);
     const formData = new FormData();
@@ -77,14 +86,15 @@ export default function DocumentVault() {
 
       if (res.ok) {
         setFile(null);
-        await fetchDocs(); // Refresh list from database
+        await fetchDocs();
         showNotification("File vaulted successfully!", "success");
       } else {
         const errData = await res.text();
-        showNotification(`Upload failed: ${errData}`, "error");
+        showNotification(`Upload failed: ${errData.substring(0, 100)}`, "error");
       }
     } catch (error) {
-      showNotification("Connection error to backend.", "error");
+      console.error('Upload error:', error);
+      showNotification("Connection error. Check your internet and try again.", "error");
     } finally {
       setIsUploading(false);
     }

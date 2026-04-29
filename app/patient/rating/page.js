@@ -30,7 +30,14 @@ export default function RateDoctorPage() {
   // 2. Submit review logic
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedDoctor) return showNotification("Pick a doctor first!", "warning");
+    if (!selectedDoctor) {
+      showNotification("Please select a doctor first", "warning");
+      return;
+    }
+    if (!comment?.trim()) {
+      showNotification("Please write a comment for your review", "warning");
+      return;
+    }
 
     setLoading(true);
     const token = localStorage.getItem('token');
@@ -54,9 +61,13 @@ export default function RateDoctorPage() {
         setComment("");
         setRating(5);
         setSelectedDoctor("");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showNotification(`${errData.message || 'Failed to submit review'}`, "error");
       }
     } catch (err) {
-      showNotification("Server connection failed.", "error");
+      console.error('Review error:', err);
+      showNotification("Network error. Could not submit review.", "error");
     } finally {
       setLoading(false);
     }
