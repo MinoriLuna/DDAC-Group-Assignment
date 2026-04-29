@@ -1,41 +1,36 @@
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
-using Amazon.Runtime;
 using System.Text.Json;
 
 namespace backend.Services.AWS;
 
 public class EventBridgeService
 {
-    private readonly IConfiguration _config;
+    private readonly IAmazonEventBridge _eventClient;
 
-    public EventBridgeService(IConfiguration config) => _config = config;
+    // Inject the client directly - NO manual credentials!
+    public EventBridgeService(IAmazonEventBridge eventClient)
+    {
+        _eventClient = eventClient;
+    }
 
     public async Task PublishAuditAsync(string actionType, object details)
     {
-        // Using your 4-hour Learner Lab credentials
-        var credentials = new SessionAWSCredentials(
-            _config["AWS:AccessKey"],
-            _config["AWS:SecretKey"],
-            _config["AWS:SessionToken"]
-        );
-
-        using var client = new AmazonEventBridgeClient(credentials, Amazon.RegionEndpoint.USEast1);
-
         var request = new PutEventsRequest
         {
             Entries = new List<PutEventsRequestEntry>
             {
                 new PutEventsRequestEntry
                 {
-                    Source = "medicare.app", // This MUST match your Rule pattern
-                    DetailType = actionType,  // e.g., "PatientBooking"
+                    Source = "medicare.app", 
+                    DetailType = actionType,  
                     Detail = JsonSerializer.Serialize(details),
                     EventBusName = "default"
                 }
             }
         };
 
-        await client.PutEventsAsync(request);
+        // Use the injected client provided by the LabInstanceProfile
+        await _eventClient.PutEventsAsync(request);
     }
 }

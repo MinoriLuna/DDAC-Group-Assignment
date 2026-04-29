@@ -1,38 +1,60 @@
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
-using Amazon.Runtime;
-using backend.Services.Interfaces; // Ensure this matches your interface folder
+using backend.Services.Interfaces;
 
 namespace backend.Services.AWS;
 
 public class SnsNotificationService : INotificationService
 {
+    private readonly IAmazonSimpleNotificationService _snsClient;
     private readonly IConfiguration _config;
 
-    public SnsNotificationService(IConfiguration config)
+    // Inject the SNS client directly - NO manual credentials here!
+    public SnsNotificationService(IAmazonSimpleNotificationService snsClient, IConfiguration config)
     {
+        _snsClient = snsClient;
         _config = config;
     }
 
     public async Task SendNotificationAsync(string subject, string message)
     {
-        // Pulling your 4-hour Learner Lab keys
-        var credentials = new SessionAWSCredentials(
-            _config["AWS:AccessKey"],
-            _config["AWS:SecretKey"],
-            _config["AWS:SessionToken"]
-        );
+        // Use the TopicArn from your Beanstalk Environment Properties
+        // Note: _config["AWS:SnsTopicArn"] handles the AWS__SnsTopicArn property
+        var topicArn = _config["AWS:SnsTopicArn"];
 
-        using var client = new AmazonSimpleNotificationServiceClient(credentials, Amazon.RegionEndpoint.USEast1);
-        
+        if (string.IsNullOrEmpty(topicArn))
+        {
+            throw new Exception("SNS Topic ARN is missing from configuration.");
+        }
+
         var request = new PublishRequest
         {
-            // Pulling the ARN we created in the console
-            TopicArn = _config["AWS:SnsTopicArn"],
+            TopicArn = topicArn,
             Subject = subject,
             Message = message
         };
 
-        await client.PublishAsync(request);
+        // Use the injected client
+        await _snsClient.PublishAsync(request);
+    }
+
+    public async Task<string> SubscribeEmailAsync(string email)
+    {
+        var topicArn = _config["AWS:SnsTopicArn"];
+
+        if (string.IsNullOrEmpty(topicArn))
+        {
+            throw new Exception("SNS Topic ARN is missing from configuration.");
+        }
+
+        var request = new SubscribeRequest
+        {
+            TopicArn = topicArn,
+            Protocol = "email",
+            Endpoint = email
+        };
+
+        var response = await _snsClient.SubscribeAsync(request);
+        return response.SubscriptionArn;
     }
 }

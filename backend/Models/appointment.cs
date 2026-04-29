@@ -6,12 +6,12 @@ namespace backend.Models;
 public enum AppointmentStatus
 {
     Pending,
+    Scheduled,
     Confirmed,
     Completed,
     Cancelled,
     InConsultation,
-    CheckedIn,
-    Scheduled
+    CheckedIn
 }
 
 [Table("appointments", Schema = "public")]

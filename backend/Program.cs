@@ -1,11 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Services.Interfaces;
-using backend.Services.Mocks; // For Mock Services
-using backend.Services.AWS; // For AWS Services
+using backend.Services.Mocks;
+using backend.Services.AWS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Amazon.S3;
+using Amazon.SimpleNotificationService;
+using Amazon.Comprehend;
+using Amazon.EventBridge;
+using Amazon.Runtime;
 using Amazon.XRay.Recorder.Core;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Amazon.XRay.Recorder.Handlers.AspNetCore;
@@ -18,24 +23,43 @@ var builder = WebApplication.CreateBuilder(args);
 // CloudWatch logging
 builder.Logging.AddAWSProvider();
 
-// Database Registry
+// --- 1. AWS SDK REGISTRY ---
+var awsOptions = builder.Configuration.GetAWSOptions();
+builder.Services.AddDefaultAWSOptions(awsOptions);
+
+builder.Services.AddAWSService<IAmazonEventBridge>();
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddAWSService<IAmazonSimpleNotificationService>();
+
+// Comprehend uses a separate personal account key (lab role lacks permission)
+builder.Services.AddSingleton<IAmazonComprehend>(_ =>
+{
+    var config = builder.Configuration;
+    var credentials = new BasicAWSCredentials(
+        config["AWS:ComprehendAccessKey"],
+        config["AWS:ComprehendSecretKey"]
+    );
+    return new AmazonComprehendClient(credentials, Amazon.RegionEndpoint.USEast1);
+});
+
+// --- 2. DATABASE REGISTRY ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// CORS Registry
+// --- 3. CORS REGISTRY ---
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
     {
-        policy.WithOrigins(allowedOrigins) 
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
 
-// Auth Registry
+// --- 4. AUTH REGISTRY ---
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -53,23 +77,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
-.AddJsonOptions(options => 
+.AddJsonOptions(options =>
     {
-        // This tells C# to ALWAYS send Enums as "Pending" instead of 0
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-// Mock Implementations
-//builder.Services.AddScoped<IStorageService, MockStorageService>();
-//builder.Services.AddScoped<INotificationService, MockNotificationService>();
-
-//AWS Services
+// --- 5. CUSTOM SERVICES REGISTRY ---
 builder.Services.AddScoped<IStorageService, S3StorageService>();
 builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
 
-// Build
+// --- 6. PIPELINE BUILD ---
 var app = builder.Build();
 
 app.UseCors("AllowNextJs");

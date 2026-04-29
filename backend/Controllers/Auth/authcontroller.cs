@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using backend.Data;
 using backend.Models;
+using backend.Services.Interfaces;
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,19 +16,21 @@ public class AuthController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _config; // This lets us read appsettings.json
+    private readonly INotificationService _notificationService;
 
-    public AuthController(ApplicationDbContext context, IConfiguration config)
+    public AuthController(ApplicationDbContext context, IConfiguration config, INotificationService notificationService)
     {
         _context = context;
         _config = config;
+        _notificationService = notificationService;
     }
 
     // --- TASK 1: REGISTER ---
     [HttpPost("register")]
-    public IActionResult Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         Console.WriteLine($"\n---> REGISTER ATTEMPT: {request.FullName} ({request.Email})");
-        try 
+        try
         {
             if (_context.Users.Any(u => u.Email == request.Email))
                 return BadRequest(new { message = "Email is already registered!" });
@@ -38,13 +41,26 @@ public class AuthController : ControllerBase
                 Email = request.Email,
                 Role = request.Role,
                 // SCRAMBLE THE PASSWORD
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password), 
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(newUser);
             _context.SaveChanges();
             Console.WriteLine("---> SUCCESS: User saved with hashed password.\n");
+
+            // Subscribe user's email to SNS notifications
+            try
+            {
+                await _notificationService.SubscribeEmailAsync(request.Email);
+                Console.WriteLine($"---> SNS: Email {request.Email} subscribed to notifications");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"---> SNS ERROR: {ex.Message}");
+                // Don't fail registration if SNS fails, just log it
+            }
+
             return Ok(new { message = "Registration successful!" });
         }
         catch (Exception ex) {
@@ -68,10 +84,10 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid email or password!" });
         }
 
-        // Generating JWT 
+        // Generating JWT
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
-        
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[] {
@@ -80,7 +96,7 @@ public class AuthController : ControllerBase
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim("userId", user.UserId.ToString())
             }),
-            Expires = DateTime.UtcNow.AddDays(7), 
+            Expires = DateTime.UtcNow.AddDays(7),
             Issuer = _config["Jwt:Issuer"],
             Audience = _config["Jwt:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -91,7 +107,7 @@ public class AuthController : ControllerBase
 
         Console.WriteLine($"---> LOGIN SUCCESS: JWT Issued for {user.FullName}");
 
-        return Ok(new { 
+        return Ok(new {
             message = "Login successful!",
             token = tokenString, // Next.js will store this
             user = new {
@@ -100,7 +116,7 @@ public class AuthController : ControllerBase
             }
         });
     }
-} 
+}
 
 public class RegisterRequest
 {

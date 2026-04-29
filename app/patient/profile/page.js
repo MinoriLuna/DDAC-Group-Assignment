@@ -1,11 +1,29 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({ fullName: '', email: '', role: '', phone: '', address: '', createdAt: '' });
   const [editData, setEditData] = useState({ fullName: '', email: '', phone: '', address: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+  const { showNotification } = useNotification();
+
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  
+  const validateForm = () => {
+    const newErrors = {};
+    if (!editData.fullName?.trim()) newErrors.fullName = 'Full name is required';
+    if (!editData.email?.trim()) newErrors.email = 'Email is required';
+    if (!validateEmail(editData.email)) newErrors.email = 'Invalid email format';
+    if (editData.phone && !/^\d{10,11}/.test(editData.phone.replace(/\D/g, ''))) {
+      newErrors.phone = 'Phone must be 10-11 digits';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -18,14 +36,28 @@ export default function ProfilePage() {
           const data = await res.json();
           setProfile(data);
           setEditData({ fullName: data.fullName, email: data.email, phone: data.phone || '', address: data.address || '' });
+        } else {
+          showNotification('Failed to load profile', 'error');
         }
-      } catch (err) { console.error(err); } finally { setLoading(false); }
+      } catch (err) { 
+        console.error(err);
+        showNotification('Could not reach server', 'error');
+      } finally { 
+        setLoading(false); 
+      }
     };
     fetchProfile();
   }, []);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      showNotification('Please check all required fields', 'warning');
+      return;
+    }
+    
+    setIsSaving(true);
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/profile/update`, {
@@ -36,9 +68,18 @@ export default function ProfilePage() {
       if (res.ok) {
         setProfile({ ...profile, ...editData });
         setIsEditing(false);
-        alert("Saved!");
+        setErrors({});
+        showNotification('Profile updated successfully!', 'success');
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showNotification(`${errData.message || 'Failed to update profile'}`, 'error');
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      showNotification('Network error. Could not save profile', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePhoneFormat = (val) => {
@@ -80,9 +121,26 @@ export default function ProfilePage() {
 
       {isEditing ? (
         <form onSubmit={handleUpdate} className="space-y-4">
-          <InputField label="Full Name" value={editData.fullName} onChange={(val) => setEditData({...editData, fullName: val})} />
-          <InputField label="Email" value={editData.email} type="email" onChange={(val) => setEditData({...editData, email: val})} />
-          <InputField label="Phone" value={editData.phone} type="phone" onChange={(val) => setEditData({...editData, phone: handlePhoneFormat(val)})} />
+          <ValidationInputField 
+            label="Full Name" 
+            value={editData.fullName} 
+            error={errors.fullName}
+            onChange={(val) => setEditData({...editData, fullName: val})} 
+          />
+          <ValidationInputField 
+            label="Email" 
+            value={editData.email} 
+            type="email" 
+            error={errors.email}
+            onChange={(val) => setEditData({...editData, email: val})} 
+          />
+          <ValidationInputField 
+            label="Phone" 
+            value={editData.phone} 
+            type="tel" 
+            error={errors.phone}
+            onChange={(val) => setEditData({...editData, phone: handlePhoneFormat(val)})} 
+          />
           
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Home Address</label>
@@ -93,9 +151,22 @@ export default function ProfilePage() {
             />
           </div>
 
-          <button type="submit" className="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all">
-            Save Changes
-          </button>
+          <div className="flex gap-3">
+            <button 
+              type="submit" 
+              disabled={isSaving}
+              className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button 
+              type="button"
+              onClick={() => {setIsEditing(false); setErrors({});}}
+              className="flex-1 bg-gray-100 text-gray-700 font-black py-4 rounded-2xl hover:bg-gray-200 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       ) : (
         <div className="space-y-4">
@@ -106,6 +177,22 @@ export default function ProfilePage() {
           <InfoItem label="Account Created" value={new Date(profile.createdAt).toLocaleString()} />
         </div>
       )}
+    </div>
+  );
+}
+
+// Input field with error display
+function ValidationInputField({ label, value, onChange, type = "text", error }) {
+  return (
+    <div>
+      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">{label} {label !== 'Address' && <span className="text-red-600">*</span>}</label>
+      <input 
+        type={type} 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full bg-gray-50 border-2 rounded-xl p-4 text-black font-semibold mt-1 outline-none ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-red-500'} focus:ring-2 transition-all`}
+      />
+      {error && <p className="text-red-600 text-xs font-bold mt-1">⚠️ {error}</p>}
     </div>
   );
 }
