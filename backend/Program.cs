@@ -6,8 +6,17 @@ using backend.Services.AWS; // For AWS Services
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Amazon.XRay.Recorder.Core;
+using Amazon.XRay.Recorder.Handlers.AwsSdk;
+using Amazon.XRay.Recorder.Handlers.AspNetCore;
+
+// Trace all AWS SDK calls (S3, SNS, Comprehend) with X-Ray
+AWSSDKHandler.RegisterXRayForAllServices();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CloudWatch logging
+builder.Logging.AddAWSProvider();
 
 // Database Registry
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -64,6 +73,8 @@ builder.Services.AddScoped<ComprehendService>();
 var app = builder.Build();
 
 app.UseCors("AllowNextJs");
+
+app.UseXRay("MediCare+");
 
 // Serve Next.js static export from wwwroot
 app.UseDefaultFiles();

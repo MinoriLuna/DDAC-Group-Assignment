@@ -12,10 +12,9 @@ public class ComprehendService
 
     private IAmazonComprehend GetClient()
     {
-        var credentials = new SessionAWSCredentials(
-            _config["AWS:AccessKey"],
-            _config["AWS:SecretKey"],
-            _config["AWS:SessionToken"]
+        var credentials = new BasicAWSCredentials(
+            _config["AWS:ComprehendAccessKey"],
+            _config["AWS:ComprehendSecretKey"]
         );
         return new AmazonComprehendClient(credentials, Amazon.RegionEndpoint.USEast1);
     }
