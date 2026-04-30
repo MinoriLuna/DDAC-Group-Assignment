@@ -4,11 +4,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- This prevents the nested 'publish' folders we saw in your logs -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**;publish\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="Procfile">
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+    <!-- CRITICAL: This includes the Nginx fix for Elastic Beanstalk -->
+    <Content Include=".platform\**\*.*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 
@@ -35,7 +41,5 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
-
-
 
 </Project>
