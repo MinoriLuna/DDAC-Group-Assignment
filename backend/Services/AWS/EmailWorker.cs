@@ -1,7 +1,8 @@
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using Amazon.SimpleNotificationService; // FIXED: Added for SNS
-using Amazon.SimpleNotificationService.Model; // FIXED: Added for PublishRequest
+using Amazon.SimpleNotificationService;
+using Amazon.SimpleNotificationService.Model;
+using System.Text;
 using System.Text.Json;
 
 namespace backend.Services.AWS;
@@ -9,18 +10,18 @@ namespace backend.Services.AWS;
 public class EmailWorker : BackgroundService
 {
     private readonly IAmazonSQS _sqsClient;
-    private readonly IAmazonSimpleNotificationService _snsClient; // FIXED: Declared field
+    private readonly IAmazonSimpleNotificationService _snsClient;
     private readonly IConfiguration _config;
     private readonly ILogger<EmailWorker> _logger;
 
     public EmailWorker(
         IAmazonSQS sqsClient, 
-        IAmazonSimpleNotificationService snsClient, // FIXED: Injected via constructor
+        IAmazonSimpleNotificationService snsClient, 
         IConfiguration config,
         ILogger<EmailWorker> logger)
     {
         _sqsClient = sqsClient;
-        _snsClient = snsClient; // FIXED: Initialized field
+        _snsClient = snsClient;
         _config = config;
         _logger = logger;
     }
@@ -31,11 +32,11 @@ public class EmailWorker : BackgroundService
 
         if (string.IsNullOrEmpty(queueUrl))
         {
-            _logger.LogCritical("[WORKER] SQS Queue URL is missing.");
+            _logger.LogCritical("[WORKER] SQS Queue URL is missing from configuration.");
             return;
         }
 
-        _logger.LogInformation("[WORKER] Background Service started. Polling: {QueueUrl}", queueUrl);
+        _logger.LogInformation("[WORKER] Service active. Polling: {QueueUrl}", queueUrl);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -45,7 +46,7 @@ public class EmailWorker : BackgroundService
                 {
                     QueueUrl = queueUrl,
                     MaxNumberOfMessages = 5,
-                    WaitTimeSeconds = 20 
+                    WaitTimeSeconds = 20 // Long polling to save money/resources
                 };
 
                 var response = await _sqsClient.ReceiveMessageAsync(receiveRequest, stoppingToken);
@@ -56,43 +57,62 @@ public class EmailWorker : BackgroundService
                     
                     if (data != null)
                     {
-                        // FIXED: Now calls the SNS version since SES is blocked
-                        await SendSnsNotification(data);
+                        await SendProfessionalSnsNotification(data);
                     }
 
                     await _sqsClient.DeleteMessageAsync(queueUrl, message.ReceiptHandle, stoppingToken);
-                    _logger.LogInformation("[WORKER] Task Complete: Message deleted from SQS.");
+                    _logger.LogInformation("[WORKER] Processed and deleted message for: {Email}", data?.RecipientEmail);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError("[WORKER] Error: {Message}", ex.Message);
+                _logger.LogError("[WORKER] Processing Error: {Message}", ex.Message);
             }
 
             await Task.Delay(5000, stoppingToken);
         }
     }
 
-    private async Task SendSnsNotification(EmailMessageDto data)
+    private async Task SendProfessionalSnsNotification(EmailMessageDto data)
     {
         var topicArn = _config["AWS:SnsTopicArn"];
+        
+        // Professional Subject Line
+        var subject = $"[MediCare+] Appointment Update: {data.Status} - {data.PatientName}";
 
-        if (string.IsNullOrEmpty(topicArn))
-        {
-            _logger.LogError("[WORKER] SNS Topic ARN is missing.");
-            return;
-        }
+        // Building the Professional Plain-Text Template
+        var body = new StringBuilder();
+        body.AppendLine("==================================================");
+        body.AppendLine("             MEDICARE+ HEALTH SYSTEM              ");
+        body.AppendLine("==================================================");
+        body.AppendLine($"Dear {data.PatientName},");
+        body.AppendLine();
+        body.AppendLine("This is an automated notification regarding your appointment status.");
+        body.AppendLine();
+        body.AppendLine("APPOINTMENT SUMMARY");
+        body.AppendLine("--------------------------------------------------");
+        body.AppendLine($"Current Status:  {data.Status.ToUpper()}");
+        body.AppendLine($"Update Details:  {data.MessageBody}");
+        body.AppendLine("--------------------------------------------------");
+        body.AppendLine();
+        body.AppendLine("If you have any questions or did not request this update,");
+        body.AppendLine("please contact our administration office immediately.");
+        body.AppendLine();
+        body.AppendLine("Thank you for choosing MediCare+.");
+        body.AppendLine();
+        body.AppendLine("Best Regards,");
+        body.AppendLine("MediCare+ Administration Team");
+        body.AppendLine("==================================================");
+        body.AppendLine("This is a system-generated message. Please do not reply.");
 
         var request = new PublishRequest
         {
             TopicArn = topicArn,
-            Subject = $"MediCare+ Appointment {data.Status}",
-            Message = $"Hello {data.PatientName},\n\nYour appointment status is: {data.Status}.\n\nDetails: {data.MessageBody}"
+            Subject = subject,
+            Message = body.ToString()
         };
 
-        // FIXED: _snsClient now exists in the current context
         await _snsClient.PublishAsync(request);
-        _logger.LogInformation("[WORKER] Success: Notification pushed to SNS Topic for {Email}", data.RecipientEmail);
     }
 }
 
