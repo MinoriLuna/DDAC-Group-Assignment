@@ -10,7 +10,7 @@ export default function MedicalHistoryPage() {
     const fetchHistory = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch('http://localhost:5230/api/appointment/mine', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/mine`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         

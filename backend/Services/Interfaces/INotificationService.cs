@@ -2,5 +2,6 @@ namespace backend.Services.Interfaces;
 
 public interface INotificationService
 {
-    Task SendSmsAsync(string phoneNumber, string message);
+    Task SendNotificationAsync(string subject, string message);
+    Task<string> SubscribeEmailAsync(string email);
 }

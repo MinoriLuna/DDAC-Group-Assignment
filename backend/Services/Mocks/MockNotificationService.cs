@@ -1,14 +1,29 @@
 using backend.Services.Interfaces;
-namespace backend.Services.Mocks;
+
+namespace backend.Services.Mocks; // Ensure this matches your folder structure
 
 public class MockNotificationService : INotificationService
 {
-    public Task SendSmsAsync(string phoneNumber, string message)
+    public Task SendNotificationAsync(string subject, string message)
     {
-        Console.WriteLine("******************************************");
-        Console.WriteLine($"[SNS MOCK] SMS TO: {phoneNumber}");
-        Console.WriteLine($"[SNS MOCK] MESSAGE: {message}");
-        Console.WriteLine("******************************************");
+        // This just prints to your local terminal so the build doesn't break
+        Console.WriteLine("------------------------------------------");
+        Console.WriteLine("[MOCK SNS NOTIFICATION SENT]");
+        Console.WriteLine($"Subject: {subject}");
+        Console.WriteLine($"Message: {message}");
+        Console.WriteLine("------------------------------------------");
+
         return Task.CompletedTask;
+    }
+
+    public Task<string> SubscribeEmailAsync(string email)
+    {
+        Console.WriteLine("------------------------------------------");
+        Console.WriteLine("[MOCK SNS EMAIL SUBSCRIPTION]");
+        Console.WriteLine($"Email: {email}");
+        Console.WriteLine("------------------------------------------");
+
+        // Return a mock subscription ARN
+        return Task.FromResult($"arn:aws:sns:us-east-1:000000000000:MediCareAlerts:mock-{Guid.NewGuid()}");
     }
 }

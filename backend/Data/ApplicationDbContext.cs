@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
     public DbSet<MedicalDocument> Documents { get; set; }
+    public DbSet<DoctorReview> Reviews { get; set; }
 
     public DbSet<Prescription> Prescriptions { get; set; }  
 

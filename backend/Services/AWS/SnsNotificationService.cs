@@ -7,28 +7,54 @@ namespace backend.Services.AWS;
 public class SnsNotificationService : INotificationService
 {
     private readonly IAmazonSimpleNotificationService _snsClient;
+    private readonly IConfiguration _config;
 
-    public SnsNotificationService(IAmazonSimpleNotificationService snsClient)
+    // Inject the SNS client directly - NO manual credentials here!
+    public SnsNotificationService(IAmazonSimpleNotificationService snsClient, IConfiguration config)
     {
         _snsClient = snsClient;
+        _config = config;
     }
 
-    public async Task SendSmsAsync(string phoneNumber, string message)
+    public async Task SendNotificationAsync(string subject, string message)
     {
+        // Use the TopicArn from your Beanstalk Environment Properties
+        // Note: _config["AWS:SnsTopicArn"] handles the AWS__SnsTopicArn property
+        var topicArn = _config["AWS:SnsTopicArn"];
+
+        if (string.IsNullOrEmpty(topicArn))
+        {
+            throw new Exception("SNS Topic ARN is missing from configuration.");
+        }
+
         var request = new PublishRequest
         {
-            Message = message,
-            PhoneNumber = phoneNumber // Format: +60123456789
+            TopicArn = topicArn,
+            Subject = subject,
+            Message = message
         };
 
-        try
+        // Use the injected client
+        await _snsClient.PublishAsync(request);
+    }
+
+    public async Task<string> SubscribeEmailAsync(string email)
+    {
+        var topicArn = _config["AWS:SnsTopicArn"];
+
+        if (string.IsNullOrEmpty(topicArn))
         {
-            await _snsClient.PublishAsync(request);
-            Console.WriteLine($"[SNS REAL] Message sent to {phoneNumber}");
+            throw new Exception("SNS Topic ARN is missing from configuration.");
         }
-        catch (Exception ex)
+
+        var request = new SubscribeRequest
         {
-            Console.WriteLine($"[SNS ERROR] Failed to send: {ex.Message}");
-        }
+            TopicArn = topicArn,
+            Protocol = "email",
+            Endpoint = email
+        };
+
+        var response = await _snsClient.SubscribeAsync(request);
+        return response.SubscriptionArn;
     }
 }

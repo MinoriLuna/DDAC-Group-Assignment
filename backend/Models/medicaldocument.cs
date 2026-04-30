@@ -8,6 +8,7 @@ public class MedicalDocument
 {
     [Key]
     [Column("id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
     // 1. The Foreign Key Column (Must be Guid to match your User model)
