@@ -1,54 +1,68 @@
 'use client';
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function AuthGuard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-
-  // Pages that don't need authentication
-  const publicPages = ['/login', '/register'];
-  const isPublicPage = publicPages.includes(pathname);
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    // 1. Helper to find the token
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+
+    const token = getCookie('token');
     const userStr = localStorage.getItem('user');
 
-    // If no token, redirect to home (unless already on public page)
+    // 2. NORMALIZE PATHS: Remove all leading/trailing slashes
+    // Example: "/patient/" becomes "patient"
+    const normalizedPath = pathname.toLowerCase().replace(/^\/|\/$/g, "");
+    const publicPages = ["", "login", "register"]; // Normalized public routes
+    const isPublic = publicPages.includes(normalizedPath);
+
+    console.log(`[DEBUG] Path: "${normalizedPath}" | Token: ${!!token} | User: ${!!userStr}`);
+
     if (!token || !userStr) {
-      if (!isPublicPage) {
-        router.push('/');
+      if (!isPublic) {
+        console.warn("[DEBUG] No credentials. Kicking to home.");
+        router.replace('/');
+      } else {
+        setStatus('authorized');
       }
       return;
     }
 
-    // If has token, parse user and redirect if on public page
     try {
       const user = JSON.parse(userStr);
-      const role = user.role;
+      const role = user.role.toLowerCase(); // Ensure "Patient" -> "patient"
 
-      // If on login/register page with valid token, redirect to dashboard
-      if (isPublicPage) {
-        if (role === 'Patient') {
-          router.push('/patient');
-        } else if (role === 'Doctor') {
-          router.push('/doctor');
-        } else if (role === 'Admin') {
-          router.push('/admin');
-        } else if (role === 'Receptionist') {
-          router.push('/receptionist');
-        } else {
-          router.push('/');
-        }
+      // 3. Handle Root Redirect
+      if (normalizedPath === "") {
+        router.replace(`/${role}`);
+        return;
       }
-    } catch (err) {
-      console.error('Failed to parse user:', err);
-      if (!isPublicPage) {
-        router.push('/');
+
+      // 4. Role Authorization (Case-insensitive)
+      if (!isPublic && !normalizedPath.startsWith(role)) {
+        console.error(`[DEBUG] Role mismatch. User is ${role}, Path is ${normalizedPath}`);
+        router.replace(`/${role}`);
+      } else {
+        setStatus('authorized');
       }
+    } catch (e) {
+      console.error("[DEBUG] Session error:", e);
+      router.replace('/');
     }
-  }, [pathname, isPublicPage, router]);
+  }, [pathname, router]);
+
+  if (status !== 'authorized') {
+    return <div className="h-screen flex items-center justify-center font-bold">MediCare+ Auth Check...</div>;
+  }
 
   return children;
 }
