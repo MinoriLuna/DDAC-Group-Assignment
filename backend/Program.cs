@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Amazon.S3;
 using Amazon.SimpleNotificationService;
+using Amazon.SQS; // Added for SQS
 using Amazon.Comprehend;
 using Amazon.EventBridge;
 using Amazon.Runtime;
@@ -15,7 +16,7 @@ using Amazon.XRay.Recorder.Core;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Amazon.XRay.Recorder.Handlers.AspNetCore;
 
-// Trace all AWS SDK calls (S3, SNS, Comprehend) with X-Ray
+// Trace all AWS SDK calls (S3, SNS, SQS, SES, Comprehend) with X-Ray
 AWSSDKHandler.RegisterXRayForAllServices();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,7 @@ builder.Services.AddDefaultAWSOptions(awsOptions);
 builder.Services.AddAWSService<IAmazonEventBridge>();
 builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddAWSService<IAmazonSimpleNotificationService>();
+builder.Services.AddAWSService<IAmazonSQS>(); // Added: Registered SQS Client
 
 // Comprehend uses a separate personal account key (lab role lacks permission)
 builder.Services.AddSingleton<IAmazonComprehend>(_ =>
@@ -87,6 +89,8 @@ builder.Services.AddScoped<IStorageService, S3StorageService>();
 builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
+builder.Services.AddHostedService<EmailWorker>(); 
+builder.Services.AddScoped<ISqsService, SqsService>();
 
 // --- 6. PIPELINE BUILD ---
 var app = builder.Build();

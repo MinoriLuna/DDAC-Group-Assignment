@@ -14,22 +14,25 @@ public class AppointmentController : ControllerBase
 {
     private readonly ApplicationDbContext _context; 
     private readonly IConfiguration _config; 
-    private readonly INotificationService _notification;
-    private readonly EventBridgeService _eventBridge; // Added EventBridge
+    private readonly INotificationService _notification; // Existing SNS Service
+    private readonly EventBridgeService _eventBridge;     // Existing Audit Service
+    private readonly ISqsService _sqs;                   // New SQS/SES Service
 
     public AppointmentController(
         ApplicationDbContext context, 
         IConfiguration config, 
         INotificationService notification,
-        EventBridgeService eventBridge) // Injected here
+        EventBridgeService eventBridge,
+        ISqsService sqs) 
     {
         _context = context;
         _config = config;
         _notification = notification;
         _eventBridge = eventBridge;
+        _sqs = sqs;
     }
 
-    // GET: api/appointment/doctors
+    // --- 1. DOCTOR RETRIEVAL ---
     [HttpGet("doctors")]
     public IActionResult GetAvailableDoctors()
     {
@@ -45,7 +48,7 @@ public class AppointmentController : ControllerBase
         return Ok(doctors);
     }
 
-    // POST: api/appointment/book
+    // --- 2. BOOKING LOGIC ---
     [Authorize] 
     [HttpPost("book")]
     public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request)
@@ -57,6 +60,7 @@ public class AppointmentController : ControllerBase
                 return Unauthorized(new { message = "You must be logged in." });
 
             var patientId = Guid.Parse(userIdString);
+            var patient = await _context.Users.FindAsync(patientId);
 
             var newAppointment = new Appointment
             {
@@ -71,24 +75,33 @@ public class AppointmentController : ControllerBase
             _context.Appointments.Add(newAppointment);
             await _context.SaveChangesAsync(); 
 
-            // --- CLOUD LOGIC A: EventBridge (Permanent Audit Log in CloudWatch) ---
+            // --- CLOUD ARCHITECTURE MULTI-SEND ---
+
+            // A. EventBridge: Permanent Audit Log for compliance
             await _eventBridge.PublishAuditAsync("AppointmentBooked", new {
                 AppointmentId = newAppointment.AppointmentId,
                 PatientId = patientId,
                 DoctorId = request.DoctorId,
                 Date = request.AppointmentDate,
-                Time = request.AppointmentTime,
                 Timestamp = DateTime.UtcNow
             });
 
-            // --- CLOUD LOGIC B: SNS (The Email Notification) ---
-            string subject = "Appointment Booking Confirmed";
-            string msg = $"Your booking for {request.AppointmentDate} at {request.AppointmentTime} has been received and is pending doctor approval.";
-            
-            await _notification.SendNotificationAsync(subject, msg);
+            // B. SNS: Immediate Admin/Group Notification (The "Radio" Broadcast)
+            await _notification.SendNotificationAsync(
+                "New Appointment Booking", 
+                $"New booking for {request.AppointmentDate} at {request.AppointmentTime}. User: {patient?.FullName}"
+            );
+
+            // C. SQS -> SES: Pretty Patient Email (The "Microservice" Add-on)
+            await _sqs.EnqueueEmailAsync(
+                patient?.Email ?? "",
+                patient?.FullName ?? "Patient",
+                "Confirmed",
+                $"Your appointment booking for {request.AppointmentDate} at {request.AppointmentTime} is pending doctor approval."
+            );
 
             return Ok(new { 
-                message = "Appointment booked and audit log archived!", 
+                message = "Appointment booked and all cloud notifications initiated!", 
                 appointmentId = newAppointment.AppointmentId 
             });
         }
@@ -98,6 +111,7 @@ public class AppointmentController : ControllerBase
         }
     }
 
+    // --- 3. PATIENT APPOINTMENT LIST ---
     [Authorize]
     [HttpGet("mine")]
     public IActionResult GetMyAppointments()
@@ -132,6 +146,7 @@ public class AppointmentController : ControllerBase
         }
     }
 
+    // --- 4. CANCELLATION LOGIC ---
     [Authorize]
     [HttpPatch("{id}/cancel")] 
     public async Task<IActionResult> CancelAppointment(Guid id)
@@ -140,6 +155,7 @@ public class AppointmentController : ControllerBase
         {
             var userIdString = User.FindFirst("userId")?.Value ?? Guid.Empty.ToString();
             var patientId = Guid.Parse(userIdString);
+            var patient = await _context.Users.FindAsync(patientId);
 
             var appointment = await _context.Appointments
                 .FirstOrDefaultAsync(a => a.AppointmentId == id && a.PatientId == patientId);
@@ -150,7 +166,9 @@ public class AppointmentController : ControllerBase
             appointment.Status = AppointmentStatus.Cancelled;
             await _context.SaveChangesAsync();
 
-            // Cloud Feature A: EventBridge Audit
+            // --- CLOUD ARCHITECTURE CANCELLATION SYNC ---
+
+            // A. EventBridge Audit
             await _eventBridge.PublishAuditAsync("AppointmentCancelled", new {
                 Action = "CANCELLED",
                 AppointmentId = id,
@@ -158,13 +176,21 @@ public class AppointmentController : ControllerBase
                 Timestamp = DateTime.UtcNow
             });
 
-            // Cloud Feature B: Notify via Email
+            // B. SNS Notification (Admin alert)
             await _notification.SendNotificationAsync(
                 "Appointment Cancelled", 
-                $"Your appointment on {appointment.AppointmentDate} has been successfully cancelled."
+                $"The appointment for {patient?.FullName} on {appointment.AppointmentDate} has been cancelled."
             );
 
-            return Ok(new { message = "Appointment cancelled and logged successfully." });
+            // C. SQS -> SES (Pretty Patient Notification)
+            await _sqs.EnqueueEmailAsync(
+                patient?.Email ?? "",
+                patient?.FullName ?? "Patient",
+                "Cancelled",
+                $"Your appointment scheduled for {appointment.AppointmentDate} has been successfully cancelled."
+            );
+
+            return Ok(new { message = "Appointment cancelled and notifications sent." });
         }
         catch (Exception ex)
         {
@@ -173,6 +199,7 @@ public class AppointmentController : ControllerBase
     }
 }
 
+// Request DTO
 public class BookAppointmentRequest
 {
     public Guid DoctorId { get; set; }
