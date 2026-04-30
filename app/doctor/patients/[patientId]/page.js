@@ -51,7 +51,12 @@ export default function PatientDetailPage() {
         const res = await fetch('http://localhost:5230/api/appointment/doctors', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) setDoctors(await res.json());
+        if (res.ok) {
+          const token = localStorage.getItem('token');
+          const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
+          const all = await res.json();
+          setDoctors(all.filter(d => d.doctorId !== currentUserId));
+        }
       } catch {/* ignore */}
     }
   };

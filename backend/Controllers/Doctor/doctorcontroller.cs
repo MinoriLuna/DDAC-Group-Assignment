@@ -560,6 +560,9 @@ public class DoctorController : ControllerBase
             if (!hasRelation)
                 return NotFound(new { message = "Patient not found or access denied." });
 
+            if (request.ToDoctorId == doctorId)
+                return BadRequest(new { message = "You cannot refer a patient to yourself." });
+
             var referringDoctor = await _context.Users.FirstOrDefaultAsync(u => u.UserId == doctorId);
             var targetDoctor    = await _context.Users.FirstOrDefaultAsync(u => u.UserId == request.ToDoctorId && u.Role == "Doctor");
             var patient         = await _context.Users.FirstOrDefaultAsync(u => u.UserId == patientId);
