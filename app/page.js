@@ -154,7 +154,7 @@ export default function LandingPage() {
             <p className="text-xl text-gray-600">Tailored experiences for each user role</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Patients */}
             <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all border border-gray-100 group">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-500 rounded-2xl flex items-center justify-center text-white text-4xl mb-6 group-hover:scale-110 transition-transform">
@@ -186,6 +186,23 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Schedule consultations</li>
                 <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Issue prescriptions</li>
                 <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Patient analytics</li>
+              </ul>
+            </div>
+
+            {/* Receptionists */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all border border-gray-100 group">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-500 rounded-2xl flex items-center justify-center text-white text-4xl mb-6 group-hover:scale-110 transition-transform">
+                📋
+              </div>
+              <h3 className="text-2xl font-bold mb-3">For Receptionists</h3>
+              <p className="text-gray-600 mb-6">
+                Manage live check-in queues, register new patients, and oversee daily clinic schedules.
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Patient check-in</li>
+                <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Queue management</li>
+                <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Register patients</li>
+                <li className="flex items-center gap-2"><span className="text-red-600">✓</span> Daily schedules</li>
               </ul>
             </div>
 

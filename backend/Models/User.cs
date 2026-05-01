@@ -24,24 +24,44 @@ public class User
     [Column("createdat")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Doctor fields
     [Column("specialization")]
-    public string? Specialization { get; set; }    
+    public string? Specialization { get; set; }
 
     [Column("licensenumber")]
-    public string? LicenseNumber { get; set; }     
+    public string? LicenseNumber { get; set; }
 
     [Column("department")]
-    public string? Department { get; set; }       
+    public string? Department { get; set; }
 
     [Column("isavailable")]
     public bool IsAvailable { get; set; } = true;
 
     [Column("availabledays")]
-    public string? AvailableDays { get; set; }   // e.g. "Mon,Tue,Wed,Thu,Fri"
+    public string? AvailableDays { get; set; }
 
     [Column("availablefrom")]
-    public string? AvailableFrom { get; set; }   // e.g. "09:00"
+    public string? AvailableFrom { get; set; }
 
     [Column("availableto")]
-    public string? AvailableTo { get; set; }     // e.g. "17:00"
+    public string? AvailableTo { get; set; }
+
+    // Patient fields
+    [Column("dateofbirth")]
+    public DateTime? DateOfBirth { get; set; }
+
+    [Column("gender")]
+    public string? Gender { get; set; }
+
+    [Column("icpassport")]
+    public string? IcPassport { get; set; }
+
+    [Column("emergencycontactname")]
+    public string? EmergencyContactName { get; set; }
+
+    [Column("emergencycontactphone")]
+    public string? EmergencyContactPhone { get; set; }
+
+    [Column("emergencycontactrelation")]
+    public string? EmergencyContactRelation { get; set; }
 }

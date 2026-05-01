@@ -48,6 +48,12 @@ public class Appointment
     [Column("prescription")]
     public string? Prescription { get; set; }
 
+    [Column("checkintime")]
+    public DateTime? CheckInTime { get; set; }
+
+    [Column("cancellationreason")]
+    public string? CancellationReason { get; set; }
+
     [ForeignKey("PatientId")]
     public User? Patient { get; set; }
 

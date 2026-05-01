@@ -75,26 +75,6 @@ public class AppointmentController : ControllerBase
             _context.Appointments.Add(newAppointment);
             await _context.SaveChangesAsync(); 
 
-<<<<<<< HEAD
-            var patient = await _context.Users.FirstOrDefaultAsync(u => u.UserId == patientId);
-            var doctor  = await _context.Users.FirstOrDefaultAsync(u => u.UserId == request.DoctorId);
-
-            // --- CLOUD LOGIC A: SQS (The Queue) ---
-            await _queue.AddToQueueAsync("appointment-notifications", new {
-                PatientId = patientId,
-                Message = $"Appointment confirmed for {request.AppointmentDate}",
-                TargetPhone = patient?.Phone ?? ""
-            });
-
-            // --- CLOUD LOGIC B: SNS (The Real-time SMS) ---
-            if (patient != null && !string.IsNullOrEmpty(patient.Phone))
-            {
-                string msg = $"Hi {patient.FullName}, your appointment with Dr. {doctor?.FullName} is confirmed for {request.AppointmentDate} at {request.AppointmentTime}. See you soon!";
-                await _notification.SendSmsAsync(patient.Phone, msg);
-            }
-=======
-            // --- CLOUD ARCHITECTURE MULTI-SEND ---
-
             // A. EventBridge: Permanent Audit Log for compliance
             await _eventBridge.PublishAuditAsync("AppointmentBooked", new {
                 AppointmentId = newAppointment.AppointmentId,
@@ -104,20 +84,11 @@ public class AppointmentController : ControllerBase
                 Timestamp = DateTime.UtcNow
             });
 
-            // B. SNS: Immediate Admin/Group Notification (The "Radio" Broadcast)
+            // B. SNS: Immediate Admin/Group Notification
             await _notification.SendNotificationAsync(
-                "New Appointment Booking", 
+                "New Appointment Booking",
                 $"New booking for {request.AppointmentDate} at {request.AppointmentTime}. User: {patient?.FullName}"
             );
-
-            // C. SQS -> SES: Pretty Patient Email (The "Microservice" Add-on)
-            await _sqs.EnqueueEmailAsync(
-                patient?.Email ?? "",
-                patient?.FullName ?? "Patient",
-                "Confirmed",
-                $"Your appointment booking for {request.AppointmentDate} at {request.AppointmentTime} is pending doctor approval."
-            );
->>>>>>> 1fa0b7a92fddee2177a0577c560d08aab5a0bc4e
 
             return Ok(new { 
                 message = "Appointment booked and all cloud notifications initiated!", 
