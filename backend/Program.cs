@@ -69,11 +69,10 @@ builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
 builder.Services.AddScoped<ISqsService, SqsService>();
-//builder.Services.AddHostedService<EmailWorker>(); // For SQS/SES Background Processing
+builder.Services.AddHostedService<EmailWorker>(); // For SQS/SES Background Processing
 
 var app = builder.Build();
 
-// --- 4. PIPELINE ---
 app.UseCors("AllowNextJs");
 app.UseXRay("MediCare+");
 

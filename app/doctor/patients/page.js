@@ -83,7 +83,7 @@ export default function PatientsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((p) => (
-            <Link href={`/doctor/patients/${p.patientId}`} key={p.patientId}>
+            <Link href={`/doctor/patients/detail?id=${p.patientId}`} key={p.patientId}>
               <div className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-md transition-all cursor-pointer flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   {/* Avatar initial */}

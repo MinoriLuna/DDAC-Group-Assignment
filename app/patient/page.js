@@ -47,30 +47,26 @@ export default function PatientDashboard() {
     fetchAppointments();
   }, []);
 
-  // Fetch documents count - disabled until endpoint is fixed
-  // useEffect(() => {
-  //   const fetchDocuments = async () => {
-  //     try {
-  //       const token = localStorage.getItem('token');
-  //       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/medicaldocument/mine`, {
-  //         headers: { 'Authorization': `Bearer ${token}` }
-  //       });
-  //       if (res.ok) {
-  //         try {
-  //           const data = await res.json();
-  //           setDocuments(data || []);
-  //         } catch (parseErr) {
-  //           setDocuments([]);
-  //         }
-  //       } else {
-  //         setDocuments([]);
-  //       }
-  //     } catch (err) {
-  //       setDocuments([]);
-  //     }
-  //   };
-  //   fetchDocuments();
-  // }, []);
+  // Fetch documents count
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/documents/mine`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDocuments(data || []);
+        } else {
+          setDocuments([]);
+        }
+      } catch (err) {
+        setDocuments([]);
+      }
+    };
+    fetchDocuments();
+  }, []);
 
   // Get next appointment
   const nextAppt = appointments
