@@ -18,7 +18,6 @@ export default function SearchPatients() {
   const [patients, setPatients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   const [sortOption, setSortOption] = useState('Newest Registered');
 
   // Fetch from live API
@@ -40,26 +39,14 @@ export default function SearchPatients() {
     fetchPatients();
   }, []);
 
-  // Simulate a search delay for realism
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setIsSearching(true);
-    setTimeout(() => setIsSearching(false), 400); 
-  };
-
-  // Filter and sort patients based on Name, ID, Phone, or IC
+  // Filter and sort patients by name only
   const filteredPatients = useMemo(() => {
     let result = [...patients];
 
-    // Show all when empty, filter when user types
     const trimmed = searchTerm.trim();
     if (trimmed) {
-      const lowerSearch = trimmed.toLowerCase();
       result = result.filter(p =>
-        p.name.toLowerCase().includes(lowerSearch) ||
-        p.id.toLowerCase().includes(lowerSearch) ||
-        (p.phone || '').includes(lowerSearch) ||
-        (p.icPassport || '').toLowerCase().includes(lowerSearch)
+        p.name.toLowerCase().includes(trimmed.toLowerCase())
       );
     }
 
@@ -100,51 +87,43 @@ export default function SearchPatients() {
           </Link>
         </div>
 
-        {/* Search Bar Container */}
+        {/* Search Box */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative z-20">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-3 gap-4">
-            <label className="block text-sm font-bold text-gray-700">
-              Quick Search
-            </label>
-            <div className="flex items-center space-x-2">
+          <label className="block text-sm font-bold text-gray-700 mb-3">Quick Search</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className={`h-6 w-6 transition-colors duration-300 ${searchTerm ? 'text-red-500' : 'text-gray-400'}`} />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by patient name..."
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-lg shadow-inner"
+            />
+          </div>
+        </div>
+
+        {/* Results Section */}
+        <div>
+           <div className="flex items-center justify-between mb-4">
+             <h3 className="text-lg font-bold text-gray-700 flex items-center">
+               Results <span className="ml-2 bg-gray-200 text-gray-800 py-0.5 px-2.5 rounded-full text-sm">{filteredPatients.length} found</span>
+             </h3>
+             <div className="flex items-center space-x-2">
                <ArrowsUpDownIcon className="h-5 w-5 text-gray-400" />
-               <select 
+               <select
                  value={sortOption}
                  onChange={(e) => setSortOption(e.target.value)}
-                 className="bg-gray-50 border border-gray-200 text-sm font-medium text-gray-700 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-red-500 cursor-pointer transition-colors hover:bg-gray-100"
+                 className="bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-red-500 cursor-pointer transition-colors hover:bg-gray-100"
                >
                  <option>Newest Registered</option>
                  <option>Oldest Registered</option>
                  <option>Alphabetical (A-Z)</option>
                  <option>Alphabetical (Z-A)</option>
                </select>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className={`h-6 w-6 transition-colors duration-300 ${searchTerm ? 'text-red-500' : 'text-gray-400'}`} />
-            </div>
-            <input 
-              type="text" 
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Search by Patient Name, ID (PT-XXX), Phone Number, or IC..."
-              className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-lg shadow-inner"
-            />
-            {/* Loading Spinner in Input */}
-            {isSearching && (
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-500"></div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Results Section */}
-        <div>
-           <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center">
-             Results <span className="ml-2 bg-gray-200 text-gray-800 py-0.5 px-2.5 rounded-full text-sm">{filteredPatients.length} found</span>
-           </h3>
+             </div>
+           </div>
 
            {isLoading ? (
              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 flex flex-col items-center justify-center">
