@@ -20,6 +20,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SystemNotification> SystemNotifications { get; set; }
 
     public DbSet<Prescription> Prescriptions { get; set; }
+    public DbSet<Record> Records { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

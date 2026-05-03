@@ -35,7 +35,7 @@ export default function RegisterPatient() {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('http://localhost:5230/api/receptionist/patients', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/patients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

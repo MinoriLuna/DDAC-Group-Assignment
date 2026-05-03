@@ -11,7 +11,7 @@ export default function PatientsPage() {
     const fetchPatients = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5230/api/doctor/patients', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/patients`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) setPatients(await res.json());

@@ -165,6 +165,7 @@ public class ReceptionistAppointmentsController : ControllerBase
     {
         var appt = await _db.Appointments.FindAsync(id);
         if (appt == null) return NotFound(new { message = "Appointment not found." });
+        if (appt.PatientId == null) return BadRequest(new { message = "Appointment has no patient assigned." });
 
         if (appt.Status == AppointmentStatus.Completed)
         {
@@ -177,7 +178,7 @@ public class ReceptionistAppointmentsController : ControllerBase
 
         var invoice = new Invoice
         {
-            PatientId     = appt.PatientId,
+            PatientId     = appt.PatientId!.Value,
             AppointmentId = appt.AppointmentId,
             Status        = InvoiceStatus.Pending,
             TotalAmount   = 0,

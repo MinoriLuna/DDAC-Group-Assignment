@@ -29,7 +29,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
-    fetch('http://localhost:5230/api/profile/profile', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/profile/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -47,7 +47,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch('http://localhost:5230/api/profile/update', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/profile/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

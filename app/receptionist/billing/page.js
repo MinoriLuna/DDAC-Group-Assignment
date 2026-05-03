@@ -20,7 +20,7 @@ import {
   PencilSquareIcon
 } from '@heroicons/react/24/outline';
 
-const API = 'http://localhost:5230/api/receptionist/invoices';
+const API = `${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/invoices`;
 
 const getStatusBadge = (status) => {
   switch (status) {

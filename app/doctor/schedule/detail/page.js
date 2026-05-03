@@ -34,7 +34,7 @@ function AppointmentDetailContent() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/appointments', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -58,7 +58,7 @@ function AppointmentDetailContent() {
     setNotesSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5230/api/doctor/appointments/${id}/notes`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments/${id}/notes`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ doctorNotes, noteType, noteContent }),
@@ -83,7 +83,7 @@ function AppointmentDetailContent() {
     setRxSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/prescriptions', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/prescriptions`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({

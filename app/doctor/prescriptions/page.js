@@ -17,7 +17,7 @@ export default function PrescriptionsPage() {
   const fetchPrescriptions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/prescriptions', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/prescriptions`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setPrescriptions(await res.json());
@@ -49,7 +49,7 @@ export default function PrescriptionsPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(
-        `http://localhost:5230/api/doctor/prescriptions/${id}`,
+        `${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/prescriptions/${id}`,
         {
           method: 'PUT',
           headers: {
