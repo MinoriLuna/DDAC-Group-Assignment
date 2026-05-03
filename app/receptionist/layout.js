@@ -102,7 +102,8 @@ const EXACT_HREFS = [
 ];
 
 function SidebarLink({ href, label }) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname.length > 1 ? rawPathname.replace(/\/$/, '') : rawPathname;
 
   let isActive;
   if (href === '/receptionist' || EXACT_HREFS.includes(href)) {
