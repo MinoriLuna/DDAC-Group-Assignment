@@ -8,15 +8,7 @@ export default function AuthGuard({ children }) {
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    // 1. Helper to find the token
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-
-    const token = getCookie('token');
+    const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
 
     // 2. NORMALIZE PATHS: Remove all leading/trailing slashes
