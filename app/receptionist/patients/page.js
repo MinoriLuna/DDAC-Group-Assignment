@@ -142,14 +142,20 @@ export default function SearchPatients() {
         {/* Results Section */}
         <div>
            <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center">
-             Results <span className="ml-2 bg-gray-200 text-gray-800 py-0.5 px-2.5 rounded-full text-sm">{filteredPatients.length} found</span>
+             Results <span className="ml-2 bg-gray-200 text-gray-800 py-0.5 px-2.5 rounded-full text-sm">{searchTerm ? filteredPatients.length : 0} found</span>
            </h3>
 
            {isLoading ? (
              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mb-4"></div>
                 <h4 className="text-xl font-bold text-gray-600">Loading directory...</h4>
-                <p className="text-gray-400 mt-2">Connecting to Supabase database</p>
+                <p className="text-gray-400 mt-2">Connecting to database</p>
+             </div>
+           ) : !searchTerm ? (
+             <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 border-dashed">
+                <MagnifyingGlassIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-xl font-bold text-gray-600">Start searching</h4>
+                <p className="text-gray-400 mt-2">Type a name, ID, phone number, or IC to find a patient.</p>
              </div>
            ) : filteredPatients.length === 0 ? (
              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 border-dashed">
