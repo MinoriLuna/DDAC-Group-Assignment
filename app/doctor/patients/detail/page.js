@@ -30,8 +30,8 @@ function PatientDetailContent() {
       const headers = { Authorization: `Bearer ${token}` };
       try {
         const [patRes, docRes] = await Promise.all([
-          fetch(`http://localhost:5230/api/doctor/patients/${patientId}`, { headers }),
-          fetch(`http://localhost:5230/api/doctor/patients/${patientId}/documents`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/patients/${patientId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/patients/${patientId}/documents`, { headers }),
         ]);
         if (patRes.ok) setPatient(await patRes.json());
         if (docRes.ok) setDocuments(await docRes.json());
@@ -50,7 +50,7 @@ function PatientDetailContent() {
     if (doctors.length === 0) {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5230/api/appointment/doctors', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/appointment/doctors`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -68,7 +68,7 @@ function PatientDetailContent() {
     setReferring(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5230/api/doctor/patients/${patientId}/refer`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/patients/${patientId}/refer`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -22,10 +22,10 @@ public class Appointment
     public Guid AppointmentId { get; set; } = Guid.NewGuid();
 
     [Column("patientid")]
-    public Guid PatientId { get; set; }
+    public Guid? PatientId { get; set; }
 
     [Column("doctorid")]
-    public Guid DoctorId { get; set; }
+    public Guid? DoctorId { get; set; }
 
     [Column("appointmentdate")]
     public DateOnly AppointmentDate { get; set; }

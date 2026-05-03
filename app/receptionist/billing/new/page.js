@@ -11,7 +11,7 @@ import {
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
-const API = 'http://localhost:5230/api/receptionist';
+const API = `${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist`;
 
 export default function GenerateInvoicePage() {
   const router = useRouter();

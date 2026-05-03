@@ -19,7 +19,7 @@ export default function SchedulePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/appointments', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setAppointments(await res.json());
@@ -74,7 +74,7 @@ export default function SchedulePage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(
-        `http://localhost:5230/api/doctor/appointments/${appointmentId}/status`,
+        `${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments/${appointmentId}/status`,
         {
           method: 'PATCH',
           headers: {

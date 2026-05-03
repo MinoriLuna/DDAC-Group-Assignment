@@ -32,7 +32,7 @@ function EditPatientContent() {
 
   useEffect(() => {
     if (!patientId) return;
-    fetch(`http://localhost:5230/api/receptionist/patients/${patientId}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/patients/${patientId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -58,7 +58,7 @@ function EditPatientContent() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch(`http://localhost:5230/api/receptionist/patients/${patientId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/patients/${patientId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
