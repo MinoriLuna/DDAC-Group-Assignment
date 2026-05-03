@@ -51,14 +51,15 @@ export default function SearchPatients() {
   const filteredPatients = useMemo(() => {
     let result = [...patients];
 
-    // Filter — only search ID when user explicitly types 'PT-' prefix
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
+    // Show all when empty, filter when user types
+    const trimmed = searchTerm.trim();
+    if (trimmed) {
+      const lowerSearch = trimmed.toLowerCase();
       result = result.filter(p =>
         p.name.toLowerCase().includes(lowerSearch) ||
-        (lowerSearch.startsWith('pt-') && p.id.toLowerCase().includes(lowerSearch)) ||
-        p.phone.includes(lowerSearch) ||
-        p.icPassport.toLowerCase().includes(lowerSearch)
+        p.id.toLowerCase().includes(lowerSearch) ||
+        (p.phone || '').includes(lowerSearch) ||
+        (p.icPassport || '').toLowerCase().includes(lowerSearch)
       );
     }
 
