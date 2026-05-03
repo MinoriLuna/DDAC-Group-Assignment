@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
@@ -39,6 +39,7 @@ export default function BookAppointment() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successStatus, setSuccessStatus] = useState(false);
+  const submittingRef = useRef(false);
 
   // Fetch patients and doctors on mount
   useEffect(() => {
@@ -92,11 +93,13 @@ export default function BookAppointment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!formData.patientId || !formData.doctorId || !formData.timeSlot) {
       alert('Please select a patient, doctor, and time slot.');
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/appointments`, {
@@ -121,6 +124,7 @@ export default function BookAppointment() {
     } catch (err) {
       alert('Error connecting to server.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
