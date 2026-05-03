@@ -2,15 +2,14 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  MagnifyingGlassIcon, 
-  UserIcon, 
-  CalendarDaysIcon, 
+import {
+  MagnifyingGlassIcon,
+  UserIcon,
+  CalendarDaysIcon,
   PhoneIcon,
   PencilSquareIcon,
   PlusCircleIcon,
-  ChevronRightIcon,
-  ArrowsUpDownIcon
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 // We now fetch patients from the C# Backend API
@@ -18,7 +17,6 @@ export default function SearchPatients() {
   const [patients, setPatients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('Newest Registered');
 
   // Fetch from live API
   useEffect(() => {
@@ -39,31 +37,14 @@ export default function SearchPatients() {
     fetchPatients();
   }, []);
 
-  // Filter and sort patients by name only
+  // Filter patients by name only
   const filteredPatients = useMemo(() => {
-    let result = [...patients];
-
     const trimmed = searchTerm.trim();
-    if (trimmed) {
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(trimmed.toLowerCase())
-      );
-    }
-
-    // Sort — use getTime() for reliable date comparison
-    return [...result].sort((a, b) => {
-      if (sortOption === 'Alphabetical (A-Z)') {
-        return (a.name || '').localeCompare(b.name || '');
-      } else if (sortOption === 'Alphabetical (Z-A)') {
-        return (b.name || '').localeCompare(a.name || '');
-      } else if (sortOption === 'Newest Registered') {
-        return new Date(b.registeredDate).getTime() - new Date(a.registeredDate).getTime();
-      } else if (sortOption === 'Oldest Registered') {
-        return new Date(a.registeredDate).getTime() - new Date(b.registeredDate).getTime();
-      }
-      return 0;
-    });
-  }, [patients, searchTerm, sortOption]);
+    if (!trimmed) return patients;
+    return patients.filter(p =>
+      p.name.toLowerCase().includes(trimmed.toLowerCase())
+    );
+  }, [patients, searchTerm]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 font-sans">
@@ -106,24 +87,9 @@ export default function SearchPatients() {
 
         {/* Results Section */}
         <div>
-           <div className="flex items-center justify-between mb-4">
-             <h3 className="text-lg font-bold text-gray-700 flex items-center">
-               Results <span className="ml-2 bg-gray-200 text-gray-800 py-0.5 px-2.5 rounded-full text-sm">{filteredPatients.length} found</span>
-             </h3>
-             <div className="flex items-center space-x-2">
-               <ArrowsUpDownIcon className="h-5 w-5 text-gray-400" />
-               <select
-                 value={sortOption}
-                 onChange={(e) => setSortOption(e.target.value)}
-                 className="bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-red-500 cursor-pointer transition-colors hover:bg-gray-100"
-               >
-                 <option>Newest Registered</option>
-                 <option>Oldest Registered</option>
-                 <option>Alphabetical (A-Z)</option>
-                 <option>Alphabetical (Z-A)</option>
-               </select>
-             </div>
-           </div>
+           <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center">
+             Results <span className="ml-2 bg-gray-200 text-gray-800 py-0.5 px-2.5 rounded-full text-sm">{filteredPatients.length} found</span>
+           </h3>
 
            {isLoading ? (
              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 flex flex-col items-center justify-center">
