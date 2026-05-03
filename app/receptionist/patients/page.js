@@ -196,7 +196,7 @@ export default function SearchPatients() {
 
                     {/* Card Footer - Actions */}
                     <div className="bg-gray-50 border-t border-gray-100 p-4 flex justify-between items-center sm:px-6">
-                      <Link href={`/receptionist/patients/${patient.realId}/edit`} className="flex-1">
+                      <Link href={`/receptionist/patients/edit?id=${patient.realId}`} className="flex-1">
                         <button className="flex items-center justify-center w-full py-2 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
                           <PencilSquareIcon className="h-4 w-4 mr-1.5" />
                           Edit Profile

@@ -4,4 +4,5 @@ public interface IStorageService
 {
     Task<string> UploadFileAsync(IFormFile file, string bucketName, string prefix = "");
     Task<bool> DeleteFileAsync(string fileUrl, string bucketName);
+    string GetPresignedUrl(string fileUrl, string bucketName, int expiryMinutes = 60);
 }
