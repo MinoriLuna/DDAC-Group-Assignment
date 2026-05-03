@@ -50,28 +50,28 @@ export default function SearchPatients() {
   // Filter and sort patients based on Name, ID, Phone, or IC
   const filteredPatients = useMemo(() => {
     let result = [...patients];
-    
-    // Filter
+
+    // Filter — only search ID when user explicitly types 'PT-' prefix
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
-      result = result.filter(p => 
+      result = result.filter(p =>
         p.name.toLowerCase().includes(lowerSearch) ||
-        p.id.toLowerCase().includes(lowerSearch) ||
+        (lowerSearch.startsWith('pt-') && p.id.toLowerCase().includes(lowerSearch)) ||
         p.phone.includes(lowerSearch) ||
-        p.icPassport.includes(lowerSearch)
+        p.icPassport.toLowerCase().includes(lowerSearch)
       );
     }
 
-    // Sort
-    return result.sort((a, b) => {
+    // Sort — use getTime() for reliable date comparison
+    return [...result].sort((a, b) => {
       if (sortOption === 'Alphabetical (A-Z)') {
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       } else if (sortOption === 'Alphabetical (Z-A)') {
-        return b.name.localeCompare(a.name);
+        return (b.name || '').localeCompare(a.name || '');
       } else if (sortOption === 'Newest Registered') {
-        return new Date(b.registeredDate) - new Date(a.registeredDate);
+        return new Date(b.registeredDate).getTime() - new Date(a.registeredDate).getTime();
       } else if (sortOption === 'Oldest Registered') {
-        return new Date(a.registeredDate) - new Date(b.registeredDate);
+        return new Date(a.registeredDate).getTime() - new Date(b.registeredDate).getTime();
       }
       return 0;
     });
