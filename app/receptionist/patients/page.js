@@ -41,12 +41,14 @@ export default function SearchPatients() {
 
   // Filter and sort patients by name only
   const filteredPatients = useMemo(() => {
-    let result = [...patients];
+    // Deduplicate by realId in case API returns duplicates
+    const unique = [...new Map(patients.map(p => [p.realId, p])).values()];
+    let result = [...unique];
 
     const trimmed = searchTerm.trim();
     if (trimmed) {
       result = result.filter(p =>
-        p.name.toLowerCase().includes(trimmed.toLowerCase())
+        (p.name ?? '').toLowerCase().includes(trimmed.toLowerCase())
       );
     }
 
@@ -140,7 +142,7 @@ export default function SearchPatients() {
            ) : (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 {filteredPatients.map(patient => (
-                  <div key={patient.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col group">
+                  <div key={patient.realId} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col group">
                     
                     {/* Card Header */}
                     <div className="p-6 pb-2 flex justify-between items-start">
