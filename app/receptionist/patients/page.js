@@ -50,16 +50,16 @@ export default function SearchPatients() {
       );
     }
 
-    // Sort — use getTime() for reliable date comparison
-    return [...result].sort((a, b) => {
+    // Sort
+    return result.sort((a, b) => {
       if (sortOption === 'Alphabetical (A-Z)') {
-        return (a.name || '').localeCompare(b.name || '');
+        return a.name.localeCompare(b.name);
       } else if (sortOption === 'Alphabetical (Z-A)') {
-        return (b.name || '').localeCompare(a.name || '');
+        return b.name.localeCompare(a.name);
       } else if (sortOption === 'Newest Registered') {
-        return new Date(b.registeredDate).getTime() - new Date(a.registeredDate).getTime();
+        return new Date(b.registeredDate) - new Date(a.registeredDate);
       } else if (sortOption === 'Oldest Registered') {
-        return new Date(a.registeredDate).getTime() - new Date(b.registeredDate).getTime();
+        return new Date(a.registeredDate) - new Date(b.registeredDate);
       }
       return 0;
     });
@@ -129,7 +129,7 @@ export default function SearchPatients() {
              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mb-4"></div>
                 <h4 className="text-xl font-bold text-gray-600">Loading directory...</h4>
-                <p className="text-gray-400 mt-2">Connecting to database</p>
+                <p className="text-gray-400 mt-2">Connecting to Supabase database</p>
              </div>
            ) : filteredPatients.length === 0 ? (
              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 border-dashed">

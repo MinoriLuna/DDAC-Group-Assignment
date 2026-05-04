@@ -80,16 +80,6 @@ public class ReceptionistAppointmentsController : ControllerBase
                 return BadRequest(new { message = "Invalid time format." });
             var apptTime = TimeOnly.FromDateTime(dt);
 
-            var duplicate = await _db.Appointments.AnyAsync(a =>
-                a.PatientId == req.PatientId &&
-                a.DoctorId == req.DoctorId &&
-                a.AppointmentDate == apptDate &&
-                a.AppointmentTime == apptTime &&
-                a.Status != AppointmentStatus.Cancelled);
-
-            if (duplicate)
-                return Conflict(new { message = "An appointment already exists for this patient with the same doctor at the same date and time." });
-
             var appt = new Appointment
             {
                 PatientId       = req.PatientId,
