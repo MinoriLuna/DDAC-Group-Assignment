@@ -12,24 +12,27 @@ namespace backend.Controllers;
 [Route("api/[controller]")]
 public class AppointmentController : ControllerBase
 {
-    private readonly ApplicationDbContext _context; 
-    private readonly IConfiguration _config; 
-    private readonly INotificationService _notification; // Existing SNS Service
-    private readonly EventBridgeService _eventBridge;     // Existing Audit Service
-    private readonly ISqsService _sqs;                   // New SQS/SES Service
+    private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _config;
+    private readonly INotificationService _notification;
+    private readonly EventBridgeService _eventBridge;
+    private readonly ISqsService _sqs;
+    private readonly ApiGatewayService _apiGateway;
 
     public AppointmentController(
-        ApplicationDbContext context, 
-        IConfiguration config, 
+        ApplicationDbContext context,
+        IConfiguration config,
         INotificationService notification,
         EventBridgeService eventBridge,
-        ISqsService sqs) 
+        ISqsService sqs,
+        ApiGatewayService apiGateway)
     {
         _context = context;
         _config = config;
         _notification = notification;
         _eventBridge = eventBridge;
         _sqs = sqs;
+        _apiGateway = apiGateway;
     }
 
     // --- 1. DOCTOR RETRIEVAL ---
@@ -90,7 +93,14 @@ public class AppointmentController : ControllerBase
                 $"New booking for {request.AppointmentDate} at {request.AppointmentTime}. User: {patient?.FullName}"
             );
 
-            return Ok(new { 
+            // C. API Gateway → Lambda → SNS: Serverless patient confirmation
+            await _apiGateway.SendNotifyAsync(
+                "[MediCare+] Appointment Booked",
+                patient?.FullName ?? "Patient",
+                $"Your appointment has been booked for {request.AppointmentDate} at {request.AppointmentTime}. We look forward to seeing you!"
+            );
+
+            return Ok(new {
                 message = "Appointment booked and all cloud notifications initiated!", 
                 appointmentId = newAppointment.AppointmentId 
             });

@@ -69,7 +69,9 @@ builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
 builder.Services.AddScoped<ISqsService, SqsService>();
-builder.Services.AddHostedService<EmailWorker>(); // For SQS/SES Background Processing
+builder.Services.AddHttpClient<ApiGatewayService>();
+// EmailWorker disabled: SQS polling is now handled by the Lambda function (lambda/sqs-email-processor)
+// builder.Services.AddHostedService<EmailWorker>();
 
 var app = builder.Build();
 

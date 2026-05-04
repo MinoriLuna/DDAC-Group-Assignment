@@ -123,3 +123,5 @@ public class EmailMessageDto
     public string Status { get; set; } = string.Empty;
     public string MessageBody { get; set; } = string.Empty;
 }
+
+//Currently Replace by AWS API Gateway and Lambda.
