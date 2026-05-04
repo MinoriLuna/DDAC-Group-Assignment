@@ -56,4 +56,14 @@ public class SnsNotificationService : INotificationService
         var response = await _snsClient.SubscribeAsync(request);
         return response.SubscriptionArn;
     }
+
+    public async Task SendSmsAsync(string phoneNumber, string message)
+    {
+        if (string.IsNullOrEmpty(phoneNumber)) return;
+        await _snsClient.PublishAsync(new PublishRequest
+        {
+            PhoneNumber = phoneNumber,
+            Message = message
+        });
+    }
 }

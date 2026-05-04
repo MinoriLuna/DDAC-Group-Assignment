@@ -26,4 +26,10 @@ public class MockNotificationService : INotificationService
         // Return a mock subscription ARN
         return Task.FromResult($"arn:aws:sns:us-east-1:000000000000:MediCareAlerts:mock-{Guid.NewGuid()}");
     }
+
+    public Task SendSmsAsync(string phoneNumber, string message)
+    {
+        Console.WriteLine($"[MOCK SMS] To: {phoneNumber} | {message}");
+        return Task.CompletedTask;
+    }
 }
