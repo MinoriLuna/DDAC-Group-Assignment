@@ -40,7 +40,7 @@ export default function NotificationsPage() {
 
   const fetchNotifications = () => {
     if (!token) { setLoading(false); return; }
-    fetch('http://localhost:5230/api/receptionist/notifications', {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/notifications`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -52,7 +52,7 @@ export default function NotificationsPage() {
   useEffect(() => { fetchNotifications(); }, []);
 
   const markAllAsRead = async () => {
-    await fetch('http://localhost:5230/api/receptionist/notifications/read-all', {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/notifications/read-all`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -60,7 +60,7 @@ export default function NotificationsPage() {
   };
 
   const markAsRead = async (id) => {
-    await fetch(`http://localhost:5230/api/receptionist/notifications/${id}/read`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/notifications/${id}/read`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}` }
     });

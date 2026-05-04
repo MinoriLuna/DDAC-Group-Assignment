@@ -66,5 +66,13 @@ namespace backend.Services.Mocks
                 return false;
             }
         }
+
+        public string GetPresignedUrl(string fileUrl, string bucketName, int expiryMinutes = 60)
+        {
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine($"\n[S3 MOCK] GetPresignedUrl called for: {fileUrl}\n");
+            Console.ResetColor();
+            return fileUrl;
+        }
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using System.Security.Claims;
 
@@ -16,7 +17,9 @@ public class ProfileController : ControllerBase
     [HttpGet("profile")]
     public IActionResult GetMyProfile()
     {
-        var userId = Guid.Parse(User.FindFirst("userId")?.Value);
+        var userIdValue = User.FindFirst("userId")?.Value;
+        if (string.IsNullOrEmpty(userIdValue)) return Unauthorized();
+        var userId = Guid.Parse(userIdValue);
         var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
         if (user == null) return NotFound();
 
@@ -31,25 +34,34 @@ public class ProfileController : ControllerBase
     }
 
     [HttpPut("update")]
-    public IActionResult UpdateProfile([FromBody] UpdateProfileRequest request)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
     {
-        var userId = Guid.Parse(User.FindFirst("userId")?.Value);
-        var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-        if (user == null) return NotFound();
+        try
+        {
+            var userIdValue = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(userIdValue)) return Unauthorized();
+            var userId = Guid.Parse(userIdValue);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null) return NotFound(new { message = "User not found." });
 
-        user.FullName = request.FullName;
-        user.Email = request.Email;
-        user.Phone = request.Phone;     
-        user.Address = request.Address; 
+            user.FullName = request.FullName ?? user.FullName;
+            user.Email = request.Email ?? user.Email;
+            user.Phone = request.Phone ?? user.Phone;
+            user.Address = request.Address ?? user.Address;
 
-        _context.SaveChanges();
-        return Ok(new { message = "Success" });
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Success" });
+        }
+        catch
+        {
+            return StatusCode(500, new { message = "Failed to update profile. Please try again." });
+        }
     }
 }
 
 public class UpdateProfileRequest {
-    public string FullName { get; set; }
-    public string Email { get; set; }
-    public string Phone { get; set; }
-    public string Address { get; set; }
+    public string? FullName { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? Address { get; set; }
 }

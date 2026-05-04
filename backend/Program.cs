@@ -74,7 +74,6 @@ builder.Services.AddScoped<IMessageQueue, MessageQueueService>();
 
 var app = builder.Build();
 
-// --- 4. PIPELINE ---
 app.UseCors("AllowNextJs");
 app.UseXRay("MediCare+");
 

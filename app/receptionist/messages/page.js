@@ -30,7 +30,7 @@ export default function MessagesPage() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
   useEffect(() => {
-    fetch('http://localhost:5230/api/receptionist/messages/contacts')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/messages/contacts`)
       .then(r => r.json())
       .then(data => {
         setStaffList(data.staff || []);
@@ -45,7 +45,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!activeContactId || !token) return;
     setLoadingMessages(true);
-    fetch(`http://localhost:5230/api/receptionist/messages/${activeContactId}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/messages/${activeContactId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -54,7 +54,7 @@ export default function MessagesPage() {
       .finally(() => setLoadingMessages(false));
 
     // mark messages from this contact as read
-    fetch(`http://localhost:5230/api/receptionist/messages/${activeContactId}/read`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/messages/${activeContactId}/read`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}` }
     }).catch(console.error);
@@ -86,7 +86,7 @@ export default function MessagesPage() {
     setInputText('');
 
     try {
-      const res = await fetch('http://localhost:5230/api/receptionist/messages', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

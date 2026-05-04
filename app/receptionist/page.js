@@ -33,7 +33,7 @@ export default function ReceptionistDashboard() {
 
   const fetchToday = () => {
     setLoading(true);
-    fetch(`http://localhost:5230/api/receptionist/appointments?date=${todayISO()}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/appointments?date=${todayISO()}`)
       .then(r => r.json())
       .then(data => setTodayAppointments(Array.isArray(data) ? data : []))
       .catch(console.error)
@@ -66,7 +66,7 @@ export default function ReceptionistDashboard() {
 
   const confirmCheckIn = async () => {
     if (!checkInTarget) return;
-    await fetch(`http://localhost:5230/api/receptionist/appointments/${checkInTarget.id}/status`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/appointments/${checkInTarget.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'Checked-In' })
@@ -77,7 +77,7 @@ export default function ReceptionistDashboard() {
 
   const confirmDequeue = async () => {
     if (!dequeueTarget) return;
-    await fetch(`http://localhost:5230/api/receptionist/appointments/${dequeueTarget.id}/status`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/appointments/${dequeueTarget.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'Completed' })
@@ -359,7 +359,7 @@ function CalendarModal({ onClose }) {
 
   const fetchDay = (date) => {
     setLoadingDay(true);
-    fetch(`http://localhost:5230/api/receptionist/appointments?date=${dateKey(date)}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/receptionist/appointments?date=${dateKey(date)}`)
       .then(r => r.json())
       .then(data => {
         const appts = Array.isArray(data) ? data : [];

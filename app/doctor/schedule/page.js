@@ -19,7 +19,7 @@ export default function SchedulePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/appointments', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setAppointments(await res.json());
@@ -74,7 +74,7 @@ export default function SchedulePage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(
-        `http://localhost:5230/api/doctor/appointments/${appointmentId}/status`,
+        `${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments/${appointmentId}/status`,
         {
           method: 'PATCH',
           headers: {
@@ -234,7 +234,7 @@ export default function SchedulePage() {
                 </div>
 
                 <div className="flex flex-col gap-2 ml-4">
-                  <Link href={`/doctor/schedule/${a.appointmentId}`}>
+                  <Link href={`/doctor/schedule/detail?id=${a.appointmentId}`}>
                     <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors w-full">
                       View / Notes
                     </button>

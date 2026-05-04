@@ -13,16 +13,13 @@ namespace backend.Controllers;
 public class DoctorController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IMessageQueue _queue;
     private readonly INotificationService _notification;
 
     public DoctorController(
         ApplicationDbContext context,
-        IMessageQueue queue,
         INotificationService notification)
     {
         _context      = context;
-        _queue        = queue;
         _notification = notification;
     }
 
@@ -218,26 +215,14 @@ public class DoctorController : ControllerBase
             var doctor  = await _context.Users.FirstOrDefaultAsync(u => u.UserId == doctorId);
 
             // AWS SNS — send SMS to patient
-            if (patient != null && !string.IsNullOrEmpty(patient.Phone))
+            if (patient != null)
             {
-                var sms = request.Status == "Completed"
+                var msg = request.Status == "Completed"
                     ? $"Hi {patient.FullName}, your consultation with Dr. {doctor?.FullName} is complete. Log in to MediCare+ to view your prescription."
                     : $"Hi {patient.FullName}, your appointment on {appointment.AppointmentDate} was cancelled by Dr. {doctor?.FullName}. Please rebook.";
 
-                await _notification.SendSmsAsync(patient.Phone, sms);
+                await _notification.SendNotificationAsync("Appointment Update", msg);
             }
-
-            // AWS SQS — queue event for audit log
-            await _queue.AddToQueueAsync("appointment-events", new
-            {
-                Event         = "AppointmentStatusChanged",
-                AppointmentId = id,
-                NewStatus     = request.Status,
-                ChangedBy     = "Doctor",
-                DoctorId      = doctorId,
-                PatientId     = appointment.PatientId,
-                Timestamp     = DateTime.UtcNow
-            });
 
             return Ok(new { message = $"Appointment marked as {request.Status}. Patient notified." });
         }
@@ -491,22 +476,11 @@ public class DoctorController : ControllerBase
             var patient = await _context.Users.FirstOrDefaultAsync(u => u.UserId == request.PatientId);
             var doctor  = await _context.Users.FirstOrDefaultAsync(u => u.UserId == doctorId);
 
-            if (patient != null && !string.IsNullOrEmpty(patient.Phone))
+            if (patient != null)
             {
-                await _notification.SendSmsAsync(patient.Phone,
+                await _notification.SendNotificationAsync("New Prescription",
                     $"Hi {patient.FullName}, Dr. {doctor?.FullName} has issued a prescription for: {request.Diagnosis}. Log in to MediCare+ to view it.");
             }
-
-            // AWS SQS — queue event
-            await _queue.AddToQueueAsync("appointment-events", new
-            {
-                Event          = "PrescriptionCreated",
-                PrescriptionId = prescription.Id,
-                DoctorId       = doctorId,
-                PatientId      = request.PatientId,
-                Diagnosis      = request.Diagnosis,
-                Timestamp      = DateTime.UtcNow
-            });
 
             return Ok(new
             {
@@ -596,21 +570,11 @@ public class DoctorController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            if (patient != null && !string.IsNullOrEmpty(patient.Phone))
+            if (patient != null)
             {
-                await _notification.SendSmsAsync(patient.Phone,
+                await _notification.SendNotificationAsync("Referral Notice",
                     $"Hi {patient.FullName}, Dr. {referringDoctor?.FullName} has referred you to Dr. {targetDoctor.FullName} on {request.AppointmentDate} at {request.AppointmentTime}. Please confirm via MediCare+.");
             }
-
-            await _queue.AddToQueueAsync("appointment-events", new
-            {
-                Event           = "PatientReferred",
-                AppointmentId   = referral.AppointmentId,
-                ReferredBy      = doctorId,
-                ReferredTo      = request.ToDoctorId,
-                PatientId       = patientId,
-                Timestamp       = DateTime.UtcNow
-            });
 
             return Ok(new { message = $"Patient referred to Dr. {targetDoctor.FullName}. Appointment created.", appointmentId = referral.AppointmentId });
         }
