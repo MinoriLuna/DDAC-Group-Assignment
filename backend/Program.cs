@@ -12,13 +12,7 @@ using Amazon.SQS;
 using Amazon.Comprehend;
 using Amazon.EventBridge;
 using Amazon.Runtime;
-using Amazon.XRay.Recorder.Core;
-using Amazon.XRay.Recorder.Handlers.AwsSdk;
-using Amazon.XRay.Recorder.Handlers.AspNetCore;
 using Microsoft.AspNetCore.StaticFiles;
-
-// Trace all AWS SDK calls (S3, SNS, SQS, Comprehend) with X-Ray
-AWSSDKHandler.RegisterXRayForAllServices();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,8 +70,6 @@ builder.Services.AddHttpClient<ApiGatewayService>();
 var app = builder.Build();
 
 app.UseCors("AllowNextJs");
-app.UseXRay("MediCare+");
-
 // 1. UseDefaultFiles MUST come before UseStaticFiles
 app.UseDefaultFiles(); 
 
