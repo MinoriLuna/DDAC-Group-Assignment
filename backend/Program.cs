@@ -69,7 +69,8 @@ builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
 builder.Services.AddScoped<ISqsService, SqsService>();
-builder.Services.AddHostedService<EmailWorker>(); // For SQS/SES Background Processing
+builder.Services.AddScoped<IMessageQueue, MessageQueueService>();
+//builder.Services.AddHostedService<EmailWorker>(); // For SQS/SES Background Processing
 
 var app = builder.Build();
 
