@@ -11,7 +11,7 @@ export default function AuthGuard({ children }) {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
 
-    // 2. NORMALIZE PATHS: Remove all leading/trailing slashes
+    // NORMALIZE PATHS: Remove all leading/trailing slashes
     // Example: "/patient/" becomes "patient"
     const normalizedPath = pathname.toLowerCase().replace(/^\/|\/$/g, "");
     const publicPages = ["", "login", "register"]; // Normalized public routes
