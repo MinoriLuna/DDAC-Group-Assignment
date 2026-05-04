@@ -4,7 +4,7 @@
   "framework": "net8.0",
   "application": "ddacmedicare",
   "environment": "ddacmedicare-test",
-  "enable-xray": false,
+  "enable-xray": true,
   "enhanced-health-type": "basic",
   "additional-options": "",
   "solution-stack": "64bit Amazon Linux 2 v2.15.0 running .NET Core",
