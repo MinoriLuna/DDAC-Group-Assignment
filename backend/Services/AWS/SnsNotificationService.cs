@@ -9,7 +9,7 @@ public class SnsNotificationService : INotificationService
     private readonly IAmazonSimpleNotificationService _snsClient;
     private readonly IConfiguration _config;
 
-    // Inject the SNS client directly - NO manual credentials here!
+    // Inject the SNS client directly
     public SnsNotificationService(IAmazonSimpleNotificationService snsClient, IConfiguration config)
     {
         _snsClient = snsClient;
@@ -18,7 +18,6 @@ public class SnsNotificationService : INotificationService
 
     public async Task SendNotificationAsync(string subject, string message)
     {
-        // Use the TopicArn from your Beanstalk Environment Properties
         // Note: _config["AWS:SnsTopicArn"] handles the AWS__SnsTopicArn property
         var topicArn = _config["AWS:SnsTopicArn"];
 
