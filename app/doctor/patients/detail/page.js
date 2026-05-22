@@ -24,6 +24,17 @@ function PatientDetailContent() {
   const [referring, setReferring] = useState(false);
   const [referMsg, setReferMsg] = useState('');
 
+  const todayValue = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().split('T')[0];
+  };
+
+  const isPastDateTime = (date, time) => {
+    if (!date || !time) return false;
+    return new Date(`${date}T${time}`) < new Date();
+  };
+
   useEffect(() => {
     const fetchAll = async () => {
       const token = localStorage.getItem('token');
@@ -65,6 +76,10 @@ function PatientDetailContent() {
 
   const handleRefer = async (e) => {
     e.preventDefault();
+    if (isPastDateTime(referForm.appointmentDate, referForm.appointmentTime)) {
+      setReferMsg('âŒ Please select a future referral appointment time.');
+      return;
+    }
     setReferring(true);
     try {
       const token = localStorage.getItem('token');
@@ -297,12 +312,14 @@ function PatientDetailContent() {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Date</label>
                   <input type="date" required value={referForm.appointmentDate}
                     onChange={(e) => setReferForm({ ...referForm, appointmentDate: e.target.value })}
+                    min={todayValue()}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 font-semibold outline-none focus:ring-2 focus:ring-red-500" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Time</label>
                   <input type="time" required value={referForm.appointmentTime}
                     onChange={(e) => setReferForm({ ...referForm, appointmentTime: e.target.value })}
+                    min={referForm.appointmentDate === todayValue() ? new Date().toTimeString().slice(0, 5) : undefined}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 font-semibold outline-none focus:ring-2 focus:ring-red-500" />
                 </div>
               </div>

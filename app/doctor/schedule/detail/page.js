@@ -25,6 +25,13 @@ function AppointmentDetailContent() {
   const [rxSaving, setRxSaving] = useState(false);
   const [rxMsg, setRxMsg] = useState('');
 
+  const getAppointmentDateTime = (appt) => {
+    if (!appt?.appointmentDate || !appt?.appointmentTime) return null;
+    const dateOnly = String(appt.appointmentDate).split('T')[0];
+    const dateTime = new Date(`${dateOnly}T${appt.appointmentTime}`);
+    return Number.isNaN(dateTime.getTime()) ? null : dateTime;
+  };
+
   useEffect(() => {
     if (!id) return;
     fetchDetail();
@@ -80,6 +87,11 @@ function AppointmentDetailContent() {
       alert('Diagnosis and medicines are required.');
       return;
     }
+    const appointmentDateTime = getAppointmentDateTime(appointment);
+    if (appointmentDateTime && appointmentDateTime > new Date()) {
+      alert('You can only issue a prescription after the appointment time starts.');
+      return;
+    }
     setRxSaving(true);
     try {
       const token = localStorage.getItem('token');
@@ -132,6 +144,9 @@ function AppointmentDetailContent() {
     );
 
   const isDone = appointment.status === 'Completed' || appointment.status === 'Cancelled';
+  const appointmentDateTime = getAppointmentDateTime(appointment);
+  const canIssuePrescription =
+    !isDone && (!appointmentDateTime || appointmentDateTime <= new Date());
 
   return (
     <div className="p-10 max-w-3xl mx-auto">
@@ -197,7 +212,7 @@ function AppointmentDetailContent() {
         )}
       </div>
 
-      {!isDone && (
+      {canIssuePrescription && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Write Prescription</h3>

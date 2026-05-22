@@ -24,6 +24,7 @@
     <PackageReference Include="AWSSDK.EventBridge" Version="4.0.5.26" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.33" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.21.2" />
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="4.0.2.26" />
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.2.27" />
     <PackageReference Include="AWSSDK.SQS" Version="4.0.2.27" />
     <PackageReference Include="AWSXRayRecorder.Core" Version="2.16.0" />

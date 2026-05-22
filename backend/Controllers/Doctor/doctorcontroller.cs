@@ -458,6 +458,15 @@ public class DoctorController : ControllerBase
             if (appointment == null)
                 return NotFound(new { message = "Appointment not found." });
 
+            if (appointment.PatientId != request.PatientId)
+                return BadRequest(new { message = "Prescription patient does not match the appointment patient." });
+
+            if (appointment.Status == AppointmentStatus.Completed || appointment.Status == AppointmentStatus.Cancelled)
+                return BadRequest(new { message = "Cannot create a prescription for a completed or cancelled appointment." });
+
+            if (!DoctorAppointmentTimePolicy.HasStarted(appointment.AppointmentDate, appointment.AppointmentTime, DateTime.Now))
+                return BadRequest(new { message = "Cannot create a prescription before the appointment time." });
+
             var prescription = new Prescription
             {
                 AppointmentId = request.AppointmentId,
@@ -543,6 +552,9 @@ public class DoctorController : ControllerBase
 
             if (targetDoctor == null)
                 return NotFound(new { message = "Target doctor not found." });
+
+            if (!DoctorAppointmentTimePolicy.IsFutureOrCurrent(request.AppointmentDate, request.AppointmentTime, DateTime.Now))
+                return BadRequest(new { message = "Referral appointment date and time cannot be in the past." });
 
             var referral = new Appointment
             {
