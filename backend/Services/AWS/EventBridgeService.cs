@@ -7,8 +7,6 @@ namespace backend.Services.AWS;
 public class EventBridgeService
 {
     private readonly IAmazonEventBridge _eventClient;
-
-    // Inject the client directly - NO manual credentials!
     public EventBridgeService(IAmazonEventBridge eventClient)
     {
         _eventClient = eventClient;

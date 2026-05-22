@@ -12,13 +12,7 @@ using Amazon.SQS;
 using Amazon.Comprehend;
 using Amazon.EventBridge;
 using Amazon.Runtime;
-using Amazon.XRay.Recorder.Core;
-using Amazon.XRay.Recorder.Handlers.AwsSdk;
-using Amazon.XRay.Recorder.Handlers.AspNetCore;
 using Microsoft.AspNetCore.StaticFiles;
-
-// Trace all AWS SDK calls (S3, SNS, SQS, Comprehend) with X-Ray
-AWSSDKHandler.RegisterXRayForAllServices();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,14 +63,13 @@ builder.Services.AddScoped<INotificationService, SnsNotificationService>();
 builder.Services.AddScoped<EventBridgeService>();
 builder.Services.AddScoped<ComprehendService>();
 builder.Services.AddScoped<ISqsService, SqsService>();
-//builder.Services.AddHostedService<EmailWorker>(); // For SQS/SES Background Processing
+builder.Services.AddHttpClient<ApiGatewayService>();
+// EmailWorker disabled: SQS polling is now handled by the Lambda function (lambda/sqs-email-processor)
+// builder.Services.AddHostedService<EmailWorker>();
 
 var app = builder.Build();
 
-// --- 4. PIPELINE ---
 app.UseCors("AllowNextJs");
-app.UseXRay("MediCare+");
-
 // 1. UseDefaultFiles MUST come before UseStaticFiles
 app.UseDefaultFiles(); 
 

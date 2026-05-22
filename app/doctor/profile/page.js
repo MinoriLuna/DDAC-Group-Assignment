@@ -19,7 +19,7 @@ export default function DoctorProfilePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/profile', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -62,7 +62,7 @@ export default function DoctorProfilePage() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/profile', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/profile`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,

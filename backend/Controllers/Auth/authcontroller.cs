@@ -24,8 +24,7 @@ public class AuthController : ControllerBase
         _config = config;
         _notificationService = notificationService;
     }
-
-    // --- TASK 1: REGISTER ---
+    
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {

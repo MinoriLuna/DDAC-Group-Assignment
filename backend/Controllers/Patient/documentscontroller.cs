@@ -128,6 +128,31 @@ namespace backend.Controllers
             }
         }
 
+        [HttpGet("download/{id}")]
+        public async Task<IActionResult> GetDownloadUrl(int id)
+        {
+            try
+            {
+                var userIdString = User.FindFirst("userId")?.Value;
+                if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+                var patientId = Guid.Parse(userIdString);
+
+                var document = await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == id && d.PatientId == patientId);
+
+                if (document == null) return NotFound("Document not found or unauthorized.");
+
+                string bucketName = _config["AWS:BucketName"] ?? "medicare-vault-storage-2026-ddac";
+                string presignedUrl = _storageService.GetPresignedUrl(document.FileUrl, bucketName, 60);
+
+                return Ok(new { url = presignedUrl, fileName = document.FileName });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Download Error: {ex.Message}");
+            }
+        }
+
         [HttpGet("mine")]
         public IActionResult GetMyDocuments()
         {

@@ -22,10 +22,10 @@ public class Appointment
     public Guid AppointmentId { get; set; } = Guid.NewGuid();
 
     [Column("patientid")]
-    public Guid PatientId { get; set; }
+    public Guid? PatientId { get; set; }
 
     [Column("doctorid")]
-    public Guid DoctorId { get; set; }
+    public Guid? DoctorId { get; set; }
 
     [Column("appointmentdate")]
     public DateOnly AppointmentDate { get; set; }
@@ -47,6 +47,12 @@ public class Appointment
 
     [Column("prescription")]
     public string? Prescription { get; set; }
+
+    [Column("checkintime")]
+    public DateTime? CheckInTime { get; set; }
+
+    [Column("cancellationreason")]
+    public string? CancellationReason { get; set; }
 
     [ForeignKey("PatientId")]
     public User? Patient { get; set; }

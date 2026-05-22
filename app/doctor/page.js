@@ -16,7 +16,7 @@ export default function DoctorDashboard() {
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5230/api/doctor/appointments', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/doctor/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setAppointments(await res.json());
@@ -129,7 +129,7 @@ export default function DoctorDashboard() {
               <div className="space-y-3">
                 {upcoming.map((a) => (
                   <Link
-                    href={`/doctor/schedule/${a.appointmentId}`}
+                    href={`/doctor/schedule/detail?id=${a.appointmentId}`}
                     key={a.appointmentId}
                   >
                     <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors cursor-pointer">

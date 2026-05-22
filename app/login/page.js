@@ -34,14 +34,14 @@ export default function LoginPage() {
       console.log("---> JWT Saved to LocalStorage");
 
       // Redirect based on role
-      const role = data.user.role;
-      if (role === 'Doctor') {
+      const role = data.user.role?.toLowerCase() || '';
+      if (role === 'doctor') {
         router.push('/doctor');
-      } else if (role === 'Patient') {
+      } else if (role === 'patient') {
         router.push('/patient');
-      } else if (role === 'Receptionist') {
+      } else if (role === 'receptionist') {
         router.push('/receptionist');
-      } else if (role === 'Admin') {
+      } else if (role === 'admin') {
         router.push('/admin');
       } else {
         router.push('/'); // Fallback
